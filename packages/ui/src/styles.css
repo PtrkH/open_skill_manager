@@ -1,19 +1,31 @@
 :root {
   color-scheme: dark;
-  --bg: #0e1014;
-  --bg-elev: #161922;
-  --bg-row: #12151c;
-  --bg-row-hover: #1a1e28;
-  --border: #262b36;
-  --text: #e8eaef;
-  --muted: #8b93a7;
-  --accent: #8fa4ff;
-  --accent-dim: #3d4a7a;
-  --ok: #6bcf8e;
-  --warn: #d4a017;
-  --danger: #e57373;
-  --mono: "IBM Plex Mono", ui-monospace, monospace;
-  --sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  /* Warm charcoal — Conductor-adjacent, not cool blue */
+  --bg: #1a1714;
+  --bg-deep: #12100e;
+  --sidebar: #161310;
+  --bg-elev: #221e1a;
+  --bg-row: #1d1915;
+  --bg-hover: #2a251f;
+  --border: #342e27;
+  --border-soft: rgba(255, 236, 210, 0.08);
+  --text: #f3ebe0;
+  --muted: #9a8f82;
+  --faint: #6e655c;
+  --accent: #c4a574;
+  --accent-soft: rgba(196, 165, 116, 0.16);
+  --accent-border: rgba(196, 165, 116, 0.35);
+  --ok: #8fbf8a;
+  --ok-soft: rgba(143, 191, 138, 0.18);
+  --warn: #d4a574;
+  --warn-soft: rgba(212, 165, 116, 0.16);
+  --danger: #d4847a;
+  --danger-soft: rgba(212, 132, 122, 0.14);
+  --display: "Fraunces", "Iowan Old Style", Georgia, serif;
+  --sans: "Source Sans 3", "Segoe UI", sans-serif;
+  --mono: "Source Code Pro", ui-monospace, monospace;
+  --radius: 8px;
+  --sidebar-w: 220px;
 }
 
 * {
@@ -25,11 +37,13 @@ body,
 #root {
   margin: 0;
   min-height: 100%;
-  background: var(--bg);
+  height: 100%;
+  background: var(--bg-deep);
   color: var(--text);
   font-family: var(--sans);
   font-size: 14px;
   line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
 }
 
 button,
@@ -43,4 +57,8 @@ button {
 
 a {
   color: var(--accent);
+}
+
+::selection {
+  background: var(--accent-soft);
 }

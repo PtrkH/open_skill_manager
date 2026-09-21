@@ -33,6 +33,12 @@ interface Snapshot {
 
 type Tab = "skills" | "repos" | "discover";
 
+const TAB_META: Record<Tab, { title: string; blurb: string }> = {
+  skills: { title: "Skills", blurb: "What each agent can load" },
+  repos: { title: "Repos", blurb: "Project-scoped skill links" },
+  discover: { title: "Discover", blurb: "Verified sources only" },
+};
+
 async function api<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
     headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
@@ -41,6 +47,39 @@ async function api<T>(url: string, init?: RequestInit): Promise<T> {
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || res.statusText);
   return data as T;
+}
+
+function IconSkills() {
+  return (
+    <svg className="nav-icon" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <path
+        d="M3 3.5h10v2H3v-2Zm0 3.5h7v2H3V7Zm0 3.5h10v2H3v-2Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function IconRepos() {
+  return (
+    <svg className="nav-icon" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <path
+        d="M2.5 4.5h4l1.2 1.2H13.5v6.3a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1V4.5Z"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        fill="none"
+      />
+    </svg>
+  );
+}
+
+function IconDiscover() {
+  return (
+    <svg className="nav-icon" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <circle cx="7" cy="7" r="4.2" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M10.2 10.2 13.5 13.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
+  );
 }
 
 export function App() {
@@ -83,67 +122,102 @@ export function App() {
   };
 
   const agents = snap?.agents ?? [];
+  const meta = TAB_META[tab];
 
   return (
-    <div className="shell">
-      <header className="top">
-        <div>
-          <div className="brand">Open Skill Manager</div>
-          <p className="tag">Skills across Claude, Codex, OpenCode, Pi, and Cursor</p>
+    <div className="app">
+      <aside className="sidebar">
+        <div className="brand-block">
+          <div className="brand-mark">
+            <div className="brand">Open Skill Manager</div>
+          </div>
+          <p className="brand-sub">Beside Conductor · skills for every agent</p>
         </div>
-        <nav className="tabs">
-          {(["skills", "repos", "discover"] as Tab[]).map((t) => (
-            <button
-              key={t}
-              className={tab === t ? "tab active" : "tab"}
-              onClick={() => setTab(t)}
-              type="button"
-            >
-              {t}
-            </button>
-          ))}
+
+        <nav className="nav">
+          <button
+            type="button"
+            className={tab === "skills" ? "nav-item active" : "nav-item"}
+            onClick={() => setTab("skills")}
+          >
+            <IconSkills />
+            <span className="nav-label">Skills</span>
+            <span className="nav-count">{snap?.skills.length ?? "·"}</span>
+          </button>
+          <button
+            type="button"
+            className={tab === "repos" ? "nav-item active" : "nav-item"}
+            onClick={() => setTab("repos")}
+          >
+            <IconRepos />
+            <span className="nav-label">Repos</span>
+            <span className="nav-count">{snap?.repos.length ?? "·"}</span>
+          </button>
+          <button
+            type="button"
+            className={tab === "discover" ? "nav-item active" : "nav-item"}
+            onClick={() => setTab("discover")}
+          >
+            <IconDiscover />
+            <span className="nav-label">Discover</span>
+            <span className="nav-count">{snap?.catalog.skills.length ?? "·"}</span>
+          </button>
         </nav>
-        <button className="ghost" type="button" disabled={busy} onClick={() => void refresh()}>
-          Refresh
-        </button>
-      </header>
 
-      {error && <div className="banner">{error}</div>}
+        <div className="sidebar-foot">
+          <button className="ghost-sm" type="button" disabled={busy} onClick={() => void refresh()}>
+            Refresh from disk
+          </button>
+        </div>
+      </aside>
 
-      {tab === "skills" && snap && (
-        <SkillsView
-          snap={snap}
-          agents={agents}
-          expanded={expanded}
-          setExpanded={setExpanded}
-          busy={busy}
-          installSource={installSource}
-          setInstallSource={setInstallSource}
-          run={run}
-        />
-      )}
+      <div className="main-col">
+        <header className="topbar">
+          <div className="page-title">{meta.title}</div>
+          <div className="page-meta">{meta.blurb}</div>
+        </header>
 
-      {tab === "repos" && snap && (
-        <ReposView
-          snap={snap}
-          selectedRepo={selectedRepo}
-          setSelectedRepo={setSelectedRepo}
-          repoPath={repoPath}
-          setRepoPath={setRepoPath}
-          busy={busy}
-          run={run}
-        />
-      )}
+        {error && <div className="banner">{error}</div>}
 
-      {tab === "discover" && snap && (
-        <DiscoverView
-          snap={snap}
-          query={discoverQ}
-          setQuery={setDiscoverQ}
-          busy={busy}
-          run={run}
-        />
-      )}
+        <div className="content">
+          {!snap && !error && <div className="empty">Loading…</div>}
+
+          {tab === "skills" && snap && (
+            <SkillsView
+              snap={snap}
+              agents={agents}
+              expanded={expanded}
+              setExpanded={setExpanded}
+              busy={busy}
+              installSource={installSource}
+              setInstallSource={setInstallSource}
+              run={run}
+            />
+          )}
+
+          {tab === "repos" && snap && (
+            <ReposView
+              snap={snap}
+              selectedRepo={selectedRepo}
+              setSelectedRepo={setSelectedRepo}
+              repoPath={repoPath}
+              setRepoPath={setRepoPath}
+              busy={busy}
+              run={run}
+            />
+          )}
+
+          {tab === "discover" && snap && (
+            <DiscoverView
+              snap={snap}
+              query={discoverQ}
+              setQuery={setDiscoverQ}
+              busy={busy}
+              run={run}
+            />
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -168,7 +242,7 @@ function SkillsView({
   run: (fn: () => Promise<unknown>) => Promise<void>;
 }) {
   return (
-    <section className="panel">
+    <section>
       <div className="toolbar">
         <input
           className="input grow"
@@ -177,7 +251,7 @@ function SkillsView({
           onChange={(e) => setInstallSource(e.target.value)}
         />
         <button
-          className="primary"
+          className="btn primary"
           type="button"
           disabled={busy || !installSource.trim()}
           onClick={() =>
@@ -192,7 +266,7 @@ function SkillsView({
           Install
         </button>
         <button
-          className="ghost"
+          className="btn ghost"
           type="button"
           disabled={busy}
           onClick={() => void run(() => api("/api/scan/import", { method: "POST" }))}
@@ -201,10 +275,10 @@ function SkillsView({
         </button>
       </div>
 
-      <div className="table">
-        <div className="thead">
+      <div className="list">
+        <div className="list-head">
           <span>Skill</span>
-          <span>Ver</span>
+          <span>Version</span>
           <span>Trust</span>
           {agents.map((a) => (
             <span key={a.id} title={a.label} className="agent-h">
@@ -213,33 +287,48 @@ function SkillsView({
           ))}
           <span>Repos</span>
         </div>
+
         {snap.skills.length === 0 && (
-          <div className="empty">No skills yet. Install one or import orphans from disk.</div>
+          <div className="empty">
+            <strong>Nothing installed yet</strong>
+            Install a skill or import what agents already have on disk.
+          </div>
         )}
+
         {snap.skills.map((skill) => {
           const open = expanded === skill.name;
           const repoCount = Object.values(skill.repos).filter(Boolean).length;
+          const enabledCount = agents.filter((a) => skill.agents[a.id]).length;
           return (
-            <div key={skill.name} className={open ? "trow open" : "trow"}>
+            <div key={skill.name} className={open ? "row open" : "row"}>
               <button
                 type="button"
-                className="tmain"
+                className="row-main"
                 onClick={() => setExpanded(open ? null : skill.name)}
               >
-                <span className="name">{skill.name}</span>
+                <span className="skill-name">
+                  <strong>{skill.name}</strong>
+                  <span className="hint">
+                    {enabledCount}/{agents.length} agents
+                    {skill.description ? ` · ${skill.description}` : ""}
+                  </span>
+                </span>
                 <span className="mono muted">{skill.version ?? "—"}</span>
-                <span className={`trust ${skill.trust}`}>{skill.trust}</span>
+                <span className={`pill ${skill.trust}`}>{skill.trust}</span>
                 {agents.map((a) => (
                   <span key={a.id} className={skill.agents[a.id] ? "dot on" : "dot"} />
                 ))}
                 <span className="muted">{repoCount || "—"}</span>
               </button>
+
               {open && (
                 <div className="detail">
-                  <p>{skill.description || "No description"}</p>
-                  <div className="toggles">
+                  <p className="detail-desc">{skill.description || "No description"}</p>
+
+                  <div className="section-label">Agents</div>
+                  <div className="switch-grid">
                     {agents.map((a) => (
-                      <label key={a.id} className="toggle">
+                      <label key={a.id} className="switch">
                         <input
                           type="checkbox"
                           checked={Boolean(skill.agents[a.id])}
@@ -263,47 +352,52 @@ function SkillsView({
                       </label>
                     ))}
                   </div>
+
                   {snap.repos.length > 0 && (
-                    <div className="toggles">
-                      {snap.repos.map((r) => (
-                        <label key={r.id} className="toggle">
-                          <input
-                            type="checkbox"
-                            checked={Boolean(skill.repos[r.id])}
-                            disabled={busy || !skill.inStore}
-                            onChange={(e) => {
-                              const on = e.target.checked;
-                              void run(() =>
-                                on
-                                  ? api("/api/enable", {
-                                      method: "POST",
-                                      body: JSON.stringify({
-                                        name: skill.name,
-                                        repos: [r.id],
-                                        allAgents: true,
+                    <>
+                      <div className="section-label">Repos</div>
+                      <div className="switch-grid">
+                        {snap.repos.map((r) => (
+                          <label key={r.id} className="switch">
+                            <input
+                              type="checkbox"
+                              checked={Boolean(skill.repos[r.id])}
+                              disabled={busy || !skill.inStore}
+                              onChange={(e) => {
+                                const on = e.target.checked;
+                                void run(() =>
+                                  on
+                                    ? api("/api/enable", {
+                                        method: "POST",
+                                        body: JSON.stringify({
+                                          name: skill.name,
+                                          repos: [r.id],
+                                          allAgents: true,
+                                        }),
+                                      })
+                                    : api("/api/disable", {
+                                        method: "POST",
+                                        body: JSON.stringify({
+                                          name: skill.name,
+                                          repos: [r.id],
+                                          agents: [],
+                                          allAgents: false,
+                                        }),
                                       }),
-                                    })
-                                  : api("/api/disable", {
-                                      method: "POST",
-                                      body: JSON.stringify({
-                                        name: skill.name,
-                                        repos: [r.id],
-                                        agents: [],
-                                        allAgents: false,
-                                      }),
-                                    }),
-                              );
-                            }}
-                          />
-                          repo:{r.id}
-                        </label>
-                      ))}
-                    </div>
+                                );
+                              }}
+                            />
+                            {r.name}
+                          </label>
+                        ))}
+                      </div>
+                    </>
                   )}
+
                   <div className="actions">
                     <button
                       type="button"
-                      className="ghost"
+                      className="btn ghost"
                       disabled={busy || !skill.inStore}
                       onClick={() =>
                         void run(() =>
@@ -318,7 +412,7 @@ function SkillsView({
                     </button>
                     <button
                       type="button"
-                      className="ghost"
+                      className="btn ghost"
                       disabled={busy}
                       onClick={() =>
                         void run(() =>
@@ -337,7 +431,7 @@ function SkillsView({
                     </button>
                     <button
                       type="button"
-                      className="danger"
+                      className="btn danger"
                       disabled={busy}
                       onClick={() =>
                         void run(() =>
@@ -381,7 +475,7 @@ function ReposView({
   const repo = snap.repos.find((r) => r.id === selectedRepo) ?? null;
 
   return (
-    <section className="panel">
+    <section>
       <div className="toolbar">
         <input
           className="input grow"
@@ -390,7 +484,7 @@ function ReposView({
           onChange={(e) => setRepoPath(e.target.value)}
         />
         <button
-          className="primary"
+          className="btn primary"
           type="button"
           disabled={busy || !repoPath.trim()}
           onClick={() =>
@@ -409,8 +503,13 @@ function ReposView({
       </div>
 
       <div className="split">
-        <aside className="side">
-          {snap.repos.length === 0 && <div className="empty">No repos registered.</div>}
+        <aside className="side-list">
+          {snap.repos.length === 0 && (
+            <div className="empty">
+              <strong>No repos</strong>
+              Add a project path to manage per-repo skills.
+            </div>
+          )}
           {snap.repos.map((r) => (
             <button
               key={r.id}
@@ -419,22 +518,30 @@ function ReposView({
               onClick={() => setSelectedRepo(r.id)}
             >
               <strong>{r.name}</strong>
-              <span className="muted mono">{r.path}</span>
+              <span className="faint mono">{r.path}</span>
             </button>
           ))}
         </aside>
-        <div className="main">
-          {!repo && <div className="empty">Select a repo</div>}
+
+        <div className="repo-panel">
+          {!repo && (
+            <div className="empty">
+              <strong>Select a repo</strong>
+              Glance at project skill links vs global enables.
+            </div>
+          )}
           {repo && (
             <>
-              <div className="toolbar">
-                <div>
-                  <div className="brand-sm">{repo.name}</div>
-                  <div className="muted mono">{repo.path}</div>
+              <div className="repo-head">
+                <div className="titles">
+                  <div className="page-title" style={{ fontSize: 18 }}>
+                    {repo.name}
+                  </div>
+                  <div className="faint mono">{repo.path}</div>
                 </div>
                 <button
                   type="button"
-                  className="ghost"
+                  className="btn ghost"
                   disabled={busy}
                   onClick={() =>
                     void run(() => api(`/api/repos/${repo.id}/align`, { method: "POST" }))
@@ -444,7 +551,7 @@ function ReposView({
                 </button>
                 <button
                   type="button"
-                  className="ghost"
+                  className="btn ghost"
                   disabled={busy}
                   onClick={() =>
                     void run(() => api(`/api/repos/${repo.id}/clean`, { method: "POST" }))
@@ -453,49 +560,50 @@ function ReposView({
                   Clean links
                 </button>
               </div>
-              <div className="table compact">
-                {snap.skills.map((s) => {
-                  const on = Boolean(s.repos[repo.id]);
-                  const global = snap.agents.filter((a) => s.agents[a.id]).map((a) => a.id);
-                  return (
-                    <div key={s.name} className="trow flat">
-                      <span className={on ? "dot on" : "dot"} />
-                      <span className="name">{s.name}</span>
-                      <span className="muted">
-                        global: {global.length ? global.join(", ") : "—"}
-                      </span>
-                      <button
-                        type="button"
-                        className="ghost"
-                        disabled={busy || !s.inStore}
-                        onClick={() =>
-                          void run(() =>
-                            on
-                              ? api("/api/disable", {
-                                  method: "POST",
-                                  body: JSON.stringify({
-                                    name: s.name,
-                                    repos: [repo.id],
-                                    agents: [],
-                                  }),
-                                })
-                              : api("/api/enable", {
-                                  method: "POST",
-                                  body: JSON.stringify({
-                                    name: s.name,
-                                    repos: [repo.id],
-                                    allAgents: true,
-                                  }),
+
+              {snap.skills.map((s) => {
+                const on = Boolean(s.repos[repo.id]);
+                const global = snap.agents.filter((a) => s.agents[a.id]).map((a) => a.id);
+                return (
+                  <div key={s.name} className="repo-skill">
+                    <span className={on ? "dot on" : "dot"} />
+                    <span>
+                      <strong>{s.name}</strong>
+                    </span>
+                    <span className="muted">
+                      global: {global.length ? global.join(", ") : "—"}
+                    </span>
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      disabled={busy || !s.inStore}
+                      onClick={() =>
+                        void run(() =>
+                          on
+                            ? api("/api/disable", {
+                                method: "POST",
+                                body: JSON.stringify({
+                                  name: s.name,
+                                  repos: [repo.id],
+                                  agents: [],
                                 }),
-                          )
-                        }
-                      >
-                        {on ? "Disable" : "Enable"}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
+                              })
+                            : api("/api/enable", {
+                                method: "POST",
+                                body: JSON.stringify({
+                                  name: s.name,
+                                  repos: [repo.id],
+                                  allAgents: true,
+                                }),
+                              }),
+                        )
+                      }
+                    >
+                      {on ? "Disable" : "Enable"}
+                    </button>
+                  </div>
+                );
+              })}
             </>
           )}
         </div>
@@ -533,7 +641,7 @@ function DiscoverView({
   }, [snap.catalog, query]);
 
   return (
-    <section className="panel">
+    <section>
       <div className="toolbar">
         <input
           className="input grow"
@@ -542,23 +650,23 @@ function DiscoverView({
           onChange={(e) => setQuery(e.target.value)}
         />
       </div>
-      <p className="muted pad">
-        Showing verified sources only. Paste any git URL on the Skills tab to install unverified
-        skills.
+      <p className="hint-line">
+        Curated allowlist only. Paste any git URL under Skills to install unverified sources.
       </p>
-      <div className="table">
+      <div className="list">
         {filtered.map((s) => (
-          <div key={`${s.sourceId}-${s.name}`} className="trow flat discover">
+          <div key={`${s.sourceId}-${s.name}`} className="discover-row">
             <div>
-              <div className="name">
-                {s.name} <span className="trust verified">verified</span>
+              <div className="name-line">
+                <strong>{s.name}</strong>
+                <span className="pill verified">verified</span>
               </div>
               <div className="muted">{s.description}</div>
-              <div className="muted mono">{s.source?.repo}</div>
+              <div className="faint mono">{s.source?.repo}</div>
             </div>
             <button
               type="button"
-              className="primary"
+              className="btn primary"
               disabled={busy || !s.source}
               onClick={() =>
                 void run(() =>
@@ -577,7 +685,12 @@ function DiscoverView({
             </button>
           </div>
         ))}
-        {filtered.length === 0 && <div className="empty">No verified skills match.</div>}
+        {filtered.length === 0 && (
+          <div className="empty">
+            <strong>No matches</strong>
+            Try another search in the verified catalog.
+          </div>
+        )}
       </div>
     </section>
   );
