@@ -114,6 +114,23 @@ export async function startUiServer(opts: { port: number; openBrowser: boolean }
     res.json(mgr.discover(q));
   });
 
+  app.get("/api/skills/:name", (req, res) => {
+    try {
+      res.json(mgr.skillDetail(req.params.name));
+    } catch (err) {
+      res.status(400).json({ error: err instanceof Error ? err.message : String(err) });
+    }
+  });
+
+  app.post("/api/skills/:name/update", (req, res) => {
+    try {
+      const force = Boolean((req.body as { force?: boolean })?.force);
+      res.json(mgr.update(req.params.name, { force }));
+    } catch (err) {
+      res.status(400).json({ error: err instanceof Error ? err.message : String(err) });
+    }
+  });
+
   app.get("/api/doctor", (_req, res) => {
     res.json(mgr.doctor());
   });

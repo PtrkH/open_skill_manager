@@ -15,6 +15,17 @@ interface SkillStatus {
   repos: Record<string, boolean>;
 }
 
+interface SkillDetail extends SkillStatus {
+  storePath: string | null;
+  versions: string[];
+  currentVersion: string | null;
+  license?: string;
+  compatibility?: string;
+  allowedTools?: string;
+  body: string;
+  bodyPreview: string;
+}
+
 interface Repo {
   id: string;
   path: string;
@@ -32,11 +43,14 @@ interface Snapshot {
 }
 
 type Tab = "skills" | "repos" | "discover";
+type View =
+  | { kind: "tab"; tab: Tab }
+  | { kind: "skill"; name: string };
 
 const TAB_META: Record<Tab, { title: string; blurb: string }> = {
-  skills: { title: "Skills", blurb: "What each agent can load" },
+  skills: { title: "Skills", blurb: "Installed · synced across agents" },
   repos: { title: "Repos", blurb: "Project-scoped skill links" },
-  discover: { title: "Discover", blurb: "Verified sources only" },
+  discover: { title: "Discover", blurb: "Verified catalog · safe installs" },
 };
 
 async function api<T>(url: string, init?: RequestInit): Promise<T> {
@@ -45,17 +59,14 @@ async function api<T>(url: string, init?: RequestInit): Promise<T> {
     ...init,
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || res.statusText);
+  if (!res.ok) throw new Error((data as { error?: string }).error || res.statusText);
   return data as T;
 }
 
 function IconSkills() {
   return (
     <svg className="nav-icon" viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path
-        d="M3 3.5h10v2H3v-2Zm0 3.5h7v2H3V7Zm0 3.5h10v2H3v-2Z"
-        fill="currentColor"
-      />
+      <path d="M3 3.5h10v2H3v-2Zm0 3.5h7v2H3V7Zm0 3.5h10v2H3v-2Z" fill="currentColor" />
     </svg>
   );
 }
@@ -82,16 +93,23 @@ function IconDiscover() {
   );
 }
 
+function skillInitials(name: string) {
+  const parts = name.split("-").filter(Boolean);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+}
+
 export function App() {
-  const [tab, setTab] = useState<Tab>("skills");
+  const [view, setView] = useState<View>({ kind: "tab", tab: "skills" });
   const [snap, setSnap] = useState<Snapshot | null>(null);
+  const [detail, setDetail] = useState<SkillDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [expanded, setExpanded] = useState<string | null>(null);
   const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
   const [installSource, setInstallSource] = useState("");
   const [repoPath, setRepoPath] = useState("");
   const [discoverQ, setDiscoverQ] = useState("");
+  const [discoverSource, setDiscoverSource] = useState<string>("all");
 
   const refresh = useCallback(async () => {
     try {
@@ -104,9 +122,24 @@ export function App() {
     }
   }, [selectedRepo]);
 
+  const loadDetail = useCallback(async (name: string) => {
+    const d = await api<SkillDetail>(`/api/skills/${encodeURIComponent(name)}`);
+    setDetail(d);
+  }, []);
+
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  useEffect(() => {
+    if (view.kind === "skill") {
+      void loadDetail(view.name).catch((err) =>
+        setError(err instanceof Error ? err.message : String(err)),
+      );
+    } else {
+      setDetail(null);
+    }
+  }, [view, loadDetail]);
 
   const run = async (fn: () => Promise<unknown>) => {
     setBusy(true);
@@ -114,6 +147,7 @@ export function App() {
     try {
       await fn();
       await refresh();
+      if (view.kind === "skill") await loadDetail(view.name);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -122,30 +156,36 @@ export function App() {
   };
 
   const agents = snap?.agents ?? [];
-  const meta = TAB_META[tab];
+  const tab = view.kind === "tab" ? view.tab : "skills";
+  const meta =
+    view.kind === "skill"
+      ? { title: view.name, blurb: "Skill detail" }
+      : TAB_META[view.tab];
+
+  const openSkill = (name: string) => setView({ kind: "skill", name });
+  const goTab = (t: Tab) => setView({ kind: "tab", tab: t });
 
   return (
     <div className="app">
       <aside className="sidebar">
         <div className="brand-block">
           <div className="brand-mark">
-            <div className="logo-c" aria-hidden>
-              <span />
-              <span />
-              <span />
-              <span />
+            <div className="logo-osm" aria-hidden>
+              <span className="logo-sheet" />
+              <span className="logo-sheet" />
+              <span className="logo-sheet" />
             </div>
             <div className="brand">Open Skill Manager</div>
           </div>
-          <p className="brand-sub">Skills for every agent</p>
+          <p className="brand-sub">Local skill control plane</p>
         </div>
 
         <div className="nav-section">Browse</div>
         <nav className="nav">
           <button
             type="button"
-            className={tab === "skills" ? "nav-item active" : "nav-item"}
-            onClick={() => setTab("skills")}
+            className={tab === "skills" && view.kind === "tab" ? "nav-item active" : "nav-item"}
+            onClick={() => goTab("skills")}
           >
             <IconSkills />
             <span className="nav-label">Skills</span>
@@ -153,8 +193,8 @@ export function App() {
           </button>
           <button
             type="button"
-            className={tab === "repos" ? "nav-item active" : "nav-item"}
-            onClick={() => setTab("repos")}
+            className={tab === "repos" && view.kind === "tab" ? "nav-item active" : "nav-item"}
+            onClick={() => goTab("repos")}
           >
             <IconRepos />
             <span className="nav-label">Repos</span>
@@ -162,8 +202,8 @@ export function App() {
           </button>
           <button
             type="button"
-            className={tab === "discover" ? "nav-item active" : "nav-item"}
-            onClick={() => setTab("discover")}
+            className={tab === "discover" && view.kind === "tab" ? "nav-item active" : "nav-item"}
+            onClick={() => goTab("discover")}
           >
             <IconDiscover />
             <span className="nav-label">Discover</span>
@@ -180,6 +220,11 @@ export function App() {
 
       <div className="main-col">
         <header className="topbar">
+          {view.kind === "skill" && (
+            <button type="button" className="back-btn" onClick={() => goTab("skills")}>
+              ← Skills
+            </button>
+          )}
           <div className="page-title">{meta.title}</div>
           <div className="page-meta">{meta.blurb}</div>
         </header>
@@ -189,20 +234,30 @@ export function App() {
         <div className="content">
           {!snap && !error && <div className="empty">Loading…</div>}
 
-          {tab === "skills" && snap && (
+          {view.kind === "skill" && (
+            <SkillDetailView
+              detail={detail}
+              agents={agents}
+              repos={snap?.repos ?? []}
+              busy={busy}
+              run={run}
+              onUninstalled={() => goTab("skills")}
+            />
+          )}
+
+          {view.kind === "tab" && view.tab === "skills" && snap && (
             <SkillsView
               snap={snap}
               agents={agents}
-              expanded={expanded}
-              setExpanded={setExpanded}
               busy={busy}
               installSource={installSource}
               setInstallSource={setInstallSource}
               run={run}
+              onOpen={openSkill}
             />
           )}
 
-          {tab === "repos" && snap && (
+          {view.kind === "tab" && view.tab === "repos" && snap && (
             <ReposView
               snap={snap}
               selectedRepo={selectedRepo}
@@ -211,16 +266,22 @@ export function App() {
               setRepoPath={setRepoPath}
               busy={busy}
               run={run}
+              onOpen={openSkill}
             />
           )}
 
-          {tab === "discover" && snap && (
+          {view.kind === "tab" && view.tab === "discover" && snap && (
             <DiscoverView
               snap={snap}
               query={discoverQ}
               setQuery={setDiscoverQ}
+              sourceFilter={discoverSource}
+              setSourceFilter={setDiscoverSource}
+              installSource={installSource}
+              setInstallSource={setInstallSource}
               busy={busy}
               run={run}
+              onInstalled={(name) => openSkill(name)}
             />
           )}
         </div>
@@ -232,21 +293,19 @@ export function App() {
 function SkillsView({
   snap,
   agents,
-  expanded,
-  setExpanded,
   busy,
   installSource,
   setInstallSource,
   run,
+  onOpen,
 }: {
   snap: Snapshot;
   agents: Snapshot["agents"];
-  expanded: string | null;
-  setExpanded: (n: string | null) => void;
   busy: boolean;
   installSource: string;
   setInstallSource: (s: string) => void;
   run: (fn: () => Promise<unknown>) => Promise<void>;
+  onOpen: (name: string) => void;
 }) {
   return (
     <section>
@@ -262,12 +321,14 @@ function SkillsView({
           type="button"
           disabled={busy || !installSource.trim()}
           onClick={() =>
-            void run(() =>
-              api("/api/install", {
+            void run(async () => {
+              const result = await api<{ name: string }>("/api/install", {
                 method: "POST",
                 body: JSON.stringify({ source: installSource.trim() }),
-              }),
-            )
+              });
+              setInstallSource("");
+              onOpen(result.name);
+            })
           }
         >
           Install
@@ -282,181 +343,303 @@ function SkillsView({
         </button>
       </div>
 
-      <div className="list">
-        <div className="list-head">
-          <span>Skill</span>
-          <span>Version</span>
-          <span>Trust</span>
-          {agents.map((a) => (
-            <span key={a.id} title={a.label} className="agent-h">
-              {a.id.slice(0, 3)}
-            </span>
-          ))}
-          <span>Repos</span>
+      {snap.skills.length === 0 && (
+        <div className="empty">
+          <strong>Nothing installed yet</strong>
+          Install a skill, import orphans, or browse Discover for verified ones.
         </div>
+      )}
 
-        {snap.skills.length === 0 && (
-          <div className="empty">
-            <strong>Nothing installed yet</strong>
-            Install a skill or import what agents already have on disk.
-          </div>
-        )}
-
+      <div className="skill-grid">
         {snap.skills.map((skill) => {
-          const open = expanded === skill.name;
+          const enabled = agents.filter((a) => skill.agents[a.id]);
           const repoCount = Object.values(skill.repos).filter(Boolean).length;
-          const enabledCount = agents.filter((a) => skill.agents[a.id]).length;
           return (
-            <div key={skill.name} className={open ? "row open" : "row"}>
-              <button
-                type="button"
-                className="row-main"
-                onClick={() => setExpanded(open ? null : skill.name)}
-              >
-                <span className="skill-name">
-                  <strong>{skill.name}</strong>
-                  <span className="hint">
-                    {enabledCount}/{agents.length} agents
-                    {skill.description ? ` · ${skill.description}` : ""}
-                  </span>
-                </span>
-                <span className="mono muted">{skill.version ?? "—"}</span>
-                <span className={`pill ${skill.trust}`}>{skill.trust}</span>
-                {agents.map((a) => (
-                  <span key={a.id} className={skill.agents[a.id] ? "dot on" : "dot"} />
-                ))}
-                <span className="muted">{repoCount || "—"}</span>
-              </button>
-
-              {open && (
-                <div className="detail">
-                  <p className="detail-desc">{skill.description || "No description"}</p>
-
-                  <div className="section-label">Agents</div>
-                  <div className="switch-grid">
-                    {agents.map((a) => (
-                      <label key={a.id} className="switch">
-                        <input
-                          type="checkbox"
-                          checked={Boolean(skill.agents[a.id])}
-                          disabled={busy || !skill.inStore}
-                          onChange={(e) => {
-                            const on = e.target.checked;
-                            void run(() =>
-                              api(on ? "/api/enable" : "/api/disable", {
-                                method: "POST",
-                                body: JSON.stringify({
-                                  name: skill.name,
-                                  agents: [a.id],
-                                  allAgents: false,
-                                  allRepos: false,
-                                }),
-                              }),
-                            );
-                          }}
-                        />
-                        {a.label}
-                      </label>
-                    ))}
+            <button
+              key={skill.name}
+              type="button"
+              className="skill-card"
+              onClick={() => onOpen(skill.name)}
+            >
+              <div className="skill-card-top">
+                <div className="skill-avatar">{skillInitials(skill.name)}</div>
+                <div className="skill-card-head">
+                  <div className="skill-card-title">
+                    <strong>{skill.name}</strong>
+                    <span className={`pill ${skill.trust}`}>{skill.trust}</span>
                   </div>
-
-                  {snap.repos.length > 0 && (
-                    <>
-                      <div className="section-label">Repos</div>
-                      <div className="switch-grid">
-                        {snap.repos.map((r) => (
-                          <label key={r.id} className="switch">
-                            <input
-                              type="checkbox"
-                              checked={Boolean(skill.repos[r.id])}
-                              disabled={busy || !skill.inStore}
-                              onChange={(e) => {
-                                const on = e.target.checked;
-                                void run(() =>
-                                  on
-                                    ? api("/api/enable", {
-                                        method: "POST",
-                                        body: JSON.stringify({
-                                          name: skill.name,
-                                          repos: [r.id],
-                                          allAgents: true,
-                                        }),
-                                      })
-                                    : api("/api/disable", {
-                                        method: "POST",
-                                        body: JSON.stringify({
-                                          name: skill.name,
-                                          repos: [r.id],
-                                          agents: [],
-                                          allAgents: false,
-                                        }),
-                                      }),
-                                );
-                              }}
-                            />
-                            {r.name}
-                          </label>
-                        ))}
-                      </div>
-                    </>
-                  )}
-
-                  <div className="actions">
-                    <button
-                      type="button"
-                      className="btn ghost"
-                      disabled={busy || !skill.inStore}
-                      onClick={() =>
-                        void run(() =>
-                          api("/api/enable", {
-                            method: "POST",
-                            body: JSON.stringify({ name: skill.name, allAgents: true }),
-                          }),
-                        )
-                      }
-                    >
-                      Enable all agents
-                    </button>
-                    <button
-                      type="button"
-                      className="btn ghost"
-                      disabled={busy}
-                      onClick={() =>
-                        void run(() =>
-                          api("/api/disable", {
-                            method: "POST",
-                            body: JSON.stringify({
-                              name: skill.name,
-                              allAgents: true,
-                              allRepos: true,
-                            }),
-                          }),
-                        )
-                      }
-                    >
-                      Disable all
-                    </button>
-                    <button
-                      type="button"
-                      className="btn danger"
-                      disabled={busy}
-                      onClick={() =>
-                        void run(() =>
-                          api("/api/uninstall", {
-                            method: "POST",
-                            body: JSON.stringify({ name: skill.name }),
-                          }),
-                        )
-                      }
-                    >
-                      Uninstall
-                    </button>
-                  </div>
+                  <div className="mono faint">{skill.version ?? "no version"}</div>
                 </div>
-              )}
-            </div>
+                <span className="chevron">→</span>
+              </div>
+              <p className="skill-card-desc">
+                {skill.description || "No description in SKILL.md"}
+              </p>
+              <div className="skill-card-meta">
+                <div className="agent-chips">
+                  {agents.map((a) => (
+                    <span
+                      key={a.id}
+                      className={skill.agents[a.id] ? "chip on" : "chip"}
+                      title={a.label}
+                    >
+                      {a.id.slice(0, 3)}
+                    </span>
+                  ))}
+                </div>
+                <div className="faint">
+                  {enabled.length}/{agents.length} agents
+                  {repoCount ? ` · ${repoCount} repo${repoCount === 1 ? "" : "s"}` : ""}
+                </div>
+              </div>
+            </button>
           );
         })}
+      </div>
+    </section>
+  );
+}
+
+function SkillDetailView({
+  detail,
+  agents,
+  repos,
+  busy,
+  run,
+  onUninstalled,
+}: {
+  detail: SkillDetail | null;
+  agents: Snapshot["agents"];
+  repos: Repo[];
+  busy: boolean;
+  run: (fn: () => Promise<unknown>) => Promise<void>;
+  onUninstalled: () => void;
+}) {
+  if (!detail) return <div className="empty">Loading skill…</div>;
+
+  const enabledAgents = agents.filter((a) => detail.agents[a.id]);
+  const enabledRepos = repos.filter((r) => detail.repos[r.id]);
+
+  return (
+    <section className="detail-page">
+      <div className="detail-hero">
+        <div className="skill-avatar lg">{skillInitials(detail.name)}</div>
+        <div className="detail-hero-text">
+          <div className="detail-title-row">
+            <h1>{detail.name}</h1>
+            <span className={`pill ${detail.trust}`}>{detail.trust}</span>
+            {detail.hold && <span className="pill">on hold</span>}
+          </div>
+          <p className="detail-lead">{detail.description || "No description"}</p>
+          <div className="detail-facts">
+            <div>
+              <span className="fact-label">Version</span>
+              <span className="mono">{detail.currentVersion ?? detail.version ?? "—"}</span>
+            </div>
+            <div>
+              <span className="fact-label">Agents</span>
+              <span>
+                {enabledAgents.length}/{agents.length} enabled
+              </span>
+            </div>
+            <div>
+              <span className="fact-label">Repos</span>
+              <span>{enabledRepos.length} linked</span>
+            </div>
+            {detail.license && (
+              <div>
+                <span className="fact-label">License</span>
+                <span>{detail.license}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="detail-actions">
+        <button
+          type="button"
+          className="btn primary"
+          disabled={busy || !detail.inStore}
+          onClick={() =>
+            void run(() =>
+              api("/api/enable", {
+                method: "POST",
+                body: JSON.stringify({ name: detail.name, allAgents: true }),
+              }),
+            )
+          }
+        >
+          Enable all agents
+        </button>
+        <button
+          type="button"
+          className="btn ghost"
+          disabled={busy}
+          onClick={() =>
+            void run(() =>
+              api("/api/disable", {
+                method: "POST",
+                body: JSON.stringify({
+                  name: detail.name,
+                  allAgents: true,
+                  allRepos: true,
+                }),
+              }),
+            )
+          }
+        >
+          Disable all
+        </button>
+        {detail.source && (
+          <button
+            type="button"
+            className="btn ghost"
+            disabled={busy}
+            onClick={() =>
+              void run(() =>
+                api(`/api/skills/${encodeURIComponent(detail.name)}/update`, {
+                  method: "POST",
+                  body: JSON.stringify({ force: true }),
+                }),
+              )
+            }
+          >
+            Update from source
+          </button>
+        )}
+        <button
+          type="button"
+          className="btn danger"
+          disabled={busy}
+          onClick={() =>
+            void run(async () => {
+              await api("/api/uninstall", {
+                method: "POST",
+                body: JSON.stringify({ name: detail.name }),
+              });
+              onUninstalled();
+            })
+          }
+        >
+          Uninstall
+        </button>
+      </div>
+
+      <div className="detail-grid">
+        <div className="detail-panel">
+          <div className="section-label">Agents</div>
+          <div className="switch-grid">
+            {agents.map((a) => (
+              <label key={a.id} className="switch">
+                <input
+                  type="checkbox"
+                  checked={Boolean(detail.agents[a.id])}
+                  disabled={busy || !detail.inStore}
+                  onChange={(e) => {
+                    const on = e.target.checked;
+                    void run(() =>
+                      api(on ? "/api/enable" : "/api/disable", {
+                        method: "POST",
+                        body: JSON.stringify({
+                          name: detail.name,
+                          agents: [a.id],
+                          allAgents: false,
+                          allRepos: false,
+                        }),
+                      }),
+                    );
+                  }}
+                />
+                {a.label}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="detail-panel">
+          <div className="section-label">Repos</div>
+          {repos.length === 0 ? (
+            <p className="muted">No repos registered yet.</p>
+          ) : (
+            <div className="switch-grid">
+              {repos.map((r) => (
+                <label key={r.id} className="switch">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(detail.repos[r.id])}
+                    disabled={busy || !detail.inStore}
+                    onChange={(e) => {
+                      const on = e.target.checked;
+                      void run(() =>
+                        on
+                          ? api("/api/enable", {
+                              method: "POST",
+                              body: JSON.stringify({
+                                name: detail.name,
+                                repos: [r.id],
+                                allAgents: true,
+                              }),
+                            })
+                          : api("/api/disable", {
+                              method: "POST",
+                              body: JSON.stringify({
+                                name: detail.name,
+                                repos: [r.id],
+                                agents: [],
+                                allAgents: false,
+                              }),
+                            }),
+                      );
+                    }}
+                  />
+                  {r.name}
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="detail-panel">
+          <div className="section-label">Source & store</div>
+          <dl className="kv">
+            <div>
+              <dt>Source</dt>
+              <dd className="mono">{detail.source ?? "—"}</dd>
+            </div>
+            <div>
+              <dt>Store path</dt>
+              <dd className="mono">{detail.storePath ?? "—"}</dd>
+            </div>
+            <div>
+              <dt>Versions</dt>
+              <dd className="mono">
+                {detail.versions.length ? detail.versions.join(", ") : "—"}
+              </dd>
+            </div>
+            {detail.compatibility && (
+              <div>
+                <dt>Compatibility</dt>
+                <dd>{detail.compatibility}</dd>
+              </div>
+            )}
+            {detail.allowedTools && (
+              <div>
+                <dt>Allowed tools</dt>
+                <dd className="mono">{detail.allowedTools}</dd>
+              </div>
+            )}
+          </dl>
+        </div>
+
+        <div className="detail-panel wide">
+          <div className="section-label">SKILL.md</div>
+          {detail.bodyPreview ? (
+            <pre className="skill-md">{detail.bodyPreview}</pre>
+          ) : (
+            <p className="muted">No body content available.</p>
+          )}
+        </div>
       </div>
     </section>
   );
@@ -470,6 +653,7 @@ function ReposView({
   setRepoPath,
   busy,
   run,
+  onOpen,
 }: {
   snap: Snapshot;
   selectedRepo: string | null;
@@ -478,6 +662,7 @@ function ReposView({
   setRepoPath: (s: string) => void;
   busy: boolean;
   run: (fn: () => Promise<unknown>) => Promise<void>;
+  onOpen: (name: string) => void;
 }) {
   const repo = snap.repos.find((r) => r.id === selectedRepo) ?? null;
 
@@ -541,9 +726,7 @@ function ReposView({
             <>
               <div className="repo-head">
                 <div className="titles">
-                  <div className="page-title" style={{ fontSize: 14 }}>
-                    {repo.name}
-                  </div>
+                  <div className="page-title">{repo.name}</div>
                   <div className="faint mono">{repo.path}</div>
                 </div>
                 <button
@@ -574,9 +757,9 @@ function ReposView({
                 return (
                   <div key={s.name} className="repo-skill">
                     <span className={on ? "dot on" : "dot"} />
-                    <span>
+                    <button type="button" className="linkish" onClick={() => onOpen(s.name)}>
                       <strong>{s.name}</strong>
-                    </span>
+                    </button>
                     <span className="muted">
                       global: {global.length ? global.join(", ") : "—"}
                     </span>
@@ -623,21 +806,37 @@ function DiscoverView({
   snap,
   query,
   setQuery,
+  sourceFilter,
+  setSourceFilter,
+  installSource,
+  setInstallSource,
   busy,
   run,
+  onInstalled,
 }: {
   snap: Snapshot;
   query: string;
   setQuery: (q: string) => void;
+  sourceFilter: string;
+  setSourceFilter: (id: string) => void;
+  installSource: string;
+  setInstallSource: (s: string) => void;
   busy: boolean;
   run: (fn: () => Promise<unknown>) => Promise<void>;
+  onInstalled: (name: string) => void;
 }) {
+  const installed = useMemo(
+    () => new Set(snap.skills.map((s) => s.name)),
+    [snap.skills],
+  );
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const sources = new Map(snap.catalog.sources.map((s) => [s.id, s]));
     return snap.catalog.skills
       .map((s) => ({ ...s, source: sources.get(s.sourceId) }))
       .filter((s) => {
+        if (sourceFilter !== "all" && s.sourceId !== sourceFilter) return false;
         if (!q) return true;
         return (
           s.name.includes(q) ||
@@ -645,10 +844,17 @@ function DiscoverView({
           (s.source?.name.toLowerCase().includes(q) ?? false)
         );
       });
-  }, [snap.catalog, query]);
+  }, [snap.catalog, query, sourceFilter]);
 
   return (
     <section>
+      <div className="discover-intro">
+        <p>
+          Browse <strong>verified</strong> skills from allowlisted sources (Anthropic, OpenAI,
+          agentskills). Or paste any git URL below — those install as <em>unverified</em>.
+        </p>
+      </div>
+
       <div className="toolbar">
         <input
           className="input grow"
@@ -656,49 +862,108 @@ function DiscoverView({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
+        <select
+          className="input"
+          value={sourceFilter}
+          onChange={(e) => setSourceFilter(e.target.value)}
+        >
+          <option value="all">All sources</option>
+          {snap.catalog.sources.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </select>
       </div>
-      <p className="hint-line">
-        Curated allowlist only. Paste any git URL under Skills to install unverified sources.
-      </p>
-      <div className="list">
-        {filtered.map((s) => (
-          <div key={`${s.sourceId}-${s.name}`} className="discover-row">
-            <div>
-              <div className="name-line">
-                <strong>{s.name}</strong>
-                <span className="pill verified">verified</span>
-              </div>
-              <div className="muted">{s.description}</div>
-              <div className="faint mono">{s.source?.repo}</div>
-            </div>
-            <button
-              type="button"
-              className="btn primary"
-              disabled={busy || !s.source}
-              onClick={() =>
-                void run(() =>
-                  api("/api/install", {
-                    method: "POST",
-                    body: JSON.stringify({
-                      source: s.source!.repo,
-                      subpath: s.path,
-                      force: true,
-                    }),
-                  }),
-                )
-              }
-            >
-              Install
-            </button>
-          </div>
+
+      <div className="toolbar">
+        <input
+          className="input grow"
+          placeholder="Or install any git URL / local path…"
+          value={installSource}
+          onChange={(e) => setInstallSource(e.target.value)}
+        />
+        <button
+          className="btn ghost"
+          type="button"
+          disabled={busy || !installSource.trim()}
+          onClick={() =>
+            void run(async () => {
+              const result = await api<{ name: string }>("/api/install", {
+                method: "POST",
+                body: JSON.stringify({ source: installSource.trim(), force: true }),
+              });
+              setInstallSource("");
+              onInstalled(result.name);
+            })
+          }
+        >
+          Install URL
+        </button>
+      </div>
+
+      <div className="source-strip">
+        {snap.catalog.sources.map((s) => (
+          <button
+            key={s.id}
+            type="button"
+            className={sourceFilter === s.id ? "source-pill active" : "source-pill"}
+            onClick={() => setSourceFilter(sourceFilter === s.id ? "all" : s.id)}
+          >
+            {s.name}
+          </button>
         ))}
-        {filtered.length === 0 && (
-          <div className="empty">
-            <strong>No matches</strong>
-            Try another search in the verified catalog.
-          </div>
-        )}
       </div>
+
+      <div className="skill-grid discover-grid">
+        {filtered.map((s) => {
+          const already = installed.has(s.name);
+          return (
+            <div key={`${s.sourceId}-${s.name}`} className="skill-card static">
+              <div className="skill-card-top">
+                <div className="skill-avatar">{skillInitials(s.name)}</div>
+                <div className="skill-card-head">
+                  <div className="skill-card-title">
+                    <strong>{s.name}</strong>
+                    <span className="pill verified">verified</span>
+                  </div>
+                  <div className="faint">{s.source?.name}</div>
+                </div>
+              </div>
+              <p className="skill-card-desc">{s.description}</p>
+              <div className="skill-card-meta">
+                <span className="faint mono truncate">{s.source?.repo}</span>
+                <button
+                  type="button"
+                  className="btn primary"
+                  disabled={busy || already || !s.source}
+                  onClick={() =>
+                    void run(async () => {
+                      const result = await api<{ name: string }>("/api/install", {
+                        method: "POST",
+                        body: JSON.stringify({
+                          source: s.source!.repo,
+                          subpath: s.path,
+                          force: true,
+                        }),
+                      });
+                      onInstalled(result.name);
+                    })
+                  }
+                >
+                  {already ? "Installed" : "Install"}
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {filtered.length === 0 && (
+        <div className="empty">
+          <strong>No matches</strong>
+          Try another search or source filter.
+        </div>
+      )}
     </section>
   );
 }

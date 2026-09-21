@@ -28,7 +28,7 @@
   "skills": [
     {
       "name": "docx",
-      "description": "Create, edit, and analyze Word documents",
+      "description": "Create, edit, and analyze Word documents (.docx)",
       "sourceId": "anthropics-skills",
       "path": "skills/docx"
     },
@@ -52,15 +52,27 @@
     },
     {
       "name": "skill-creator",
-      "description": "Guide for creating effective Agent Skills",
+      "description": "Guide for creating effective Agent Skills with good descriptions and structure",
       "sourceId": "anthropics-skills",
       "path": "skills/skill-creator"
     },
     {
-      "name": "gh-fix-issues",
-      "description": "Fix GitHub issues end-to-end with Codex",
-      "sourceId": "openai-skills",
-      "path": "skills/.system/skill-installer"
+      "name": "webapp-testing",
+      "description": "Test local web apps with Playwright — UI flows, forms, and screenshots",
+      "sourceId": "anthropics-skills",
+      "path": "skills/webapp-testing"
+    },
+    {
+      "name": "mcp-builder",
+      "description": "Guide for creating MCP servers to integrate external APIs with Claude",
+      "sourceId": "anthropics-skills",
+      "path": "skills/mcp-builder"
+    },
+    {
+      "name": "frontend-design",
+      "description": "Create distinctive, production-grade frontend interfaces with strong design systems",
+      "sourceId": "anthropics-skills",
+      "path": "skills/frontend-design"
     }
   ]
 }

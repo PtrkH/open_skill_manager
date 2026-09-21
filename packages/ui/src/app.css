@@ -28,32 +28,38 @@
   gap: 10px;
 }
 
-.logo-c {
-  display: grid;
-  grid-template-rows: repeat(4, 3px);
-  gap: 2px;
-  width: 14px;
+.logo-osm {
+  position: relative;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
 }
 
-.logo-c span {
-  display: block;
-  height: 3px;
-  background: var(--text);
-  border-radius: 1px;
+.logo-sheet {
+  position: absolute;
+  left: 0;
+  right: 2px;
+  height: 11px;
+  border: 1.5px solid var(--text);
+  border-radius: 2px;
+  background: var(--sidebar);
 }
 
-.logo-c span:nth-child(1) {
-  width: 100%;
+.logo-sheet:nth-child(1) {
+  top: 0;
+  opacity: 0.35;
+  transform: translate(2px, 0);
 }
-.logo-c span:nth-child(2) {
-  width: 55%;
+
+.logo-sheet:nth-child(2) {
+  top: 3px;
+  opacity: 0.65;
+  transform: translate(1px, 0);
 }
-.logo-c span:nth-child(3) {
-  width: 55%;
-}
-.logo-c span:nth-child(4) {
-  width: 100%;
+
+.logo-sheet:nth-child(3) {
+  top: 6px;
+  opacity: 1;
 }
 
 .brand {
@@ -691,6 +697,322 @@
   }
 }
 
+.back-btn {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 0;
+  margin-right: 4px;
+  font-size: 12.5px;
+}
+
+.back-btn:hover {
+  color: var(--text);
+}
+
+.skill-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 10px;
+}
+
+.skill-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  background: var(--bg-elev);
+  color: inherit;
+  padding: 14px;
+  transition: border-color 0.12s ease, background 0.12s ease, transform 0.12s ease;
+}
+
+button.skill-card:hover {
+  border-color: #3a3a3a;
+  background: var(--bg-hover);
+  transform: translateY(-1px);
+}
+
+.skill-card.static {
+  cursor: default;
+}
+
+.skill-card-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.skill-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #161616;
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  flex-shrink: 0;
+}
+
+.skill-avatar.lg {
+  width: 52px;
+  height: 52px;
+  font-size: 16px;
+  border-radius: 10px;
+}
+
+.skill-card-head {
+  flex: 1;
+  min-width: 0;
+}
+
+.skill-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.skill-card-title strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.chevron {
+  color: var(--faint);
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+.skill-card-desc {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 3.9em;
+}
+
+.skill-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: auto;
+  padding-top: 4px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.agent-chips {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  padding: 2px 5px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  color: var(--faint);
+}
+
+.chip.on {
+  color: var(--text);
+  border-color: #3f3f3f;
+  background: #1a1a1a;
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px;
+}
+
+.detail-page {
+  animation: rise 0.22s ease both;
+}
+
+.detail-hero {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.detail-hero-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.detail-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.detail-title-row h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.detail-lead {
+  margin: 8px 0 14px;
+  color: var(--muted);
+  max-width: 62ch;
+  font-size: 14px;
+}
+
+.detail-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+}
+
+.detail-facts > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fact-label {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--faint);
+}
+
+.detail-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.detail-panel {
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  background: var(--bg-elev);
+  padding: 14px;
+}
+
+.detail-panel.wide {
+  grid-column: 1 / -1;
+}
+
+.kv {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.kv div {
+  display: grid;
+  gap: 2px;
+}
+
+.kv dt {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--faint);
+}
+
+.kv dd {
+  margin: 0;
+  color: var(--text);
+  word-break: break-all;
+  font-size: 12.5px;
+}
+
+.skill-md {
+  margin: 0;
+  padding: 12px;
+  border-radius: 8px;
+  background: #0c0c0c;
+  border: 1px solid var(--border-soft);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  max-height: 360px;
+  overflow: auto;
+}
+
+.linkish {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  text-align: left;
+}
+
+.linkish:hover strong {
+  text-decoration: underline;
+}
+
+.discover-intro {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 13px;
+  max-width: 62ch;
+}
+
+.discover-intro strong {
+  color: var(--text);
+}
+
+.source-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.source-pill {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+.source-pill.active,
+.source-pill:hover {
+  color: var(--text);
+  border-color: #525252;
+  background: var(--bg-active);
+}
+
+.discover-grid .skill-card-meta {
+  align-items: center;
+}
+
 @media (max-width: 900px) {
   .app {
     grid-template-columns: 1fr;
@@ -718,6 +1040,9 @@
     display: none;
   }
   .split {
+    grid-template-columns: 1fr;
+  }
+  .detail-grid {
     grid-template-columns: 1fr;
   }
   .list-head,

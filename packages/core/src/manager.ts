@@ -500,6 +500,38 @@ export class OpenSkillManager {
     return loadVerifiedCatalog();
   }
 
+  skillDetail(name: string) {
+    const status = this.statusFor(name);
+    const storePath = resolveCurrentSkillPath(name, this.home);
+    const vers = this.versions(name);
+    let body = "";
+    let license: string | undefined;
+    let compatibility: string | undefined;
+    let allowedTools: string | undefined;
+    if (storePath) {
+      try {
+        const parsed = readSkillDir(storePath);
+        body = parsed.body.trim();
+        license = parsed.frontmatter.license;
+        compatibility = parsed.frontmatter.compatibility;
+        allowedTools = parsed.frontmatter["allowed-tools"];
+      } catch {
+        /* ignore */
+      }
+    }
+    return {
+      ...status,
+      storePath,
+      versions: vers.versions,
+      currentVersion: vers.current,
+      license,
+      compatibility,
+      allowedTools,
+      body,
+      bodyPreview: body.slice(0, 1200),
+    };
+  }
+
   snapshot() {
     return {
       skills: this.listStatuses(),
