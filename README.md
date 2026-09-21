@@ -14,9 +14,9 @@ Skills install into different folders per agent. Across a handful of repos it’
 
 - Canonical skill store + **symlinks** to enable/disable without deleting
 - **Versions & updates**, with pins
-- Global dashboard + per-repo breakdown
+- **Global · per-agent · per-repo** controls (all first-class)
 - Discovery biased to **verified** sources; arbitrary git URLs allowed but marked unverified
-- CLI + local browser UI (simplest stack)
+- CLI + **local** browser UI (`osm ui` on localhost) · **dark mode only**
 - macOS only · MIT · skills-first (instruction files later)
 
 ## License

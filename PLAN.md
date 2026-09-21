@@ -85,13 +85,29 @@ v1 does **not** try to sandbox skill scripts. Trust = **provenance of the repo**
 
 Offline: after first fetch, versions live under `cache/` / store; install/enable/disable/list work offline.
 
-### App shape → **local web UI + CLI (simplest)**
+### App shape → **local web UI + CLI (not a hosted site)**
 
-- **CLI** `osm` (or `open-skill-manager`): scan, list, enable, disable, install, update — scriptable, testable.
-- **UI**: small local server (`osm ui` → `http://127.0.0.1:…`) opened in browser. No Electron/Tauri for v1 unless we later want menu-bar polish.
-- Mac-only is fine; document paths as macOS home-relative.
+Yes — a **web UI**, but it only runs on your Mac:
+
+- **CLI** `osm`: scan, list, enable, disable, install, update — scriptable, testable.
+- **UI**: `osm ui` starts a local server on `127.0.0.1` and opens your browser. Same process talks to the filesystem; nothing is deployed to the internet.
+- **Not** Electron/Tauri for v1 (extra packaging cost). Can wrap later as a menu-bar app if useful.
+- **Dark mode only** — no light theme, no system toggle.
+- Mac-only; paths documented as macOS home-relative.
 
 This is the least moving parts and easiest to open-source.
+
+### Scopes (all first-class)
+
+Every skill can be controlled on three axes — all supported in v1:
+
+| Scope | What it means | Example |
+| --- | --- | --- |
+| **Global** | Installed in the OSM store; available to project onto agents/repos | Skill exists at version 1.2.0 |
+| **Per agent** | Enabled/disabled for Claude, Codex, OpenCode, Pi, Cursor independently (or bulk all) | On for Claude + Codex, off for Pi |
+| **Per repo** | Enabled/disabled inside a registered repo’s project skill roots | On globally for Claude, also linked in `acme-api` |
+
+UI surfaces both a **global dashboard** (skills → agent + repo coverage) and a **per-repo view**. Bulk: enable/disable all agents; align a repo to global; clear repo-only links.
 
 ### License → **MIT**
 
@@ -110,8 +126,8 @@ Best default for a personal side-project OSS tool: simple for contributors and f
 Minimal single composition:
 
 - Left or top: **Skills** list (name, version, trust badge, outdated?)
-- Each row expands or navigates to a **coverage matrix**: Agent × Enabled (Claude, Codex, OpenCode, Pi, Cursor) + **Global / which repos**
-- Bulk actions: Enable all agents · Disable all · Update · Uninstall from store
+- Each row expands to coverage: **per-agent toggles** (Claude, Codex, OpenCode, Pi, Cursor) + **which repos**
+- Bulk: Enable all agents · Disable all agents · Update · Uninstall from store
 - Quiet empty states; no stat strips or marketing chrome
 
 ### Per-repo view
@@ -130,9 +146,9 @@ Pick from a short repo list (~5–6 paths you register, or auto-detect recent gi
 
 ### Visual direction
 
+- **Dark mode only** (Conductor-adjacent, calm charcoal — not neon/glow)
 - Super minimal, high clarity, dense-but-calm (status table, not cards)
-- Neutral Mac-like surface; avoid purple-glow AI clichés
-- Glanceable enable toggles (per agent) — same “see at a glance” energy as Conductor’s agent list
+- Glanceable enable toggles (per agent + per repo) — same “see at a glance” energy as Conductor
 - Motion: only subtle row expand / toggle feedback
 
 **Beside Conductor:** same repos, complementary job. Optional later: read Conductor’s known repo/workspace list from its app support directory if stable and documented; v1 just lets you add repo paths manually.
@@ -217,11 +233,11 @@ Adapters expose: `detect()`, `listInstalled()`, `enable(skillPath)`, `disable(na
 - Project-level enable/disable via adapters
 - `osm repo status` / align / clean
 
-### M3 — Local UI
-- Global skill list + agent matrix
-- Per-repo page
-- Enable all / disable all
-- Conductor-like minimal chrome
+### M3 — Local web UI (dark only)
+- Global skill list + per-agent matrix + repo coverage
+- Per-repo page with align/clean
+- Enable/disable: one agent, all agents, one repo, all registered repos
+- Conductor-like minimal dark chrome
 
 ### M4 — Discovery + trust
 - Bundled verified catalog (shallow clone or index JSON)
@@ -260,7 +276,8 @@ open_skill_manager/
 1. CLI binary name: **`osm`** or longer?
 2. On “enable all”, should we always write **both** `.agents/skills` *and* agent-specific dirs, or prefer shared `.agents` when the agent supports it?
 3. First verified sources to ship: Anthropic + OpenAI + agentskills examples — add/remove any?
-4. Should v1 UI be dark-friendly (Conductor-ish) or light System appearance?
+
+**Locked:** dark mode only · local web UI + CLI · global + per-agent + per-repo all in v1.
 
 ---
 
