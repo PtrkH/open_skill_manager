@@ -129,11 +129,18 @@ export function App() {
       <aside className="sidebar">
         <div className="brand-block">
           <div className="brand-mark">
+            <div className="logo-c" aria-hidden>
+              <span />
+              <span />
+              <span />
+              <span />
+            </div>
             <div className="brand">Open Skill Manager</div>
           </div>
-          <p className="brand-sub">Beside Conductor · skills for every agent</p>
+          <p className="brand-sub">Skills for every agent</p>
         </div>
 
+        <div className="nav-section">Browse</div>
         <nav className="nav">
           <button
             type="button"
@@ -534,7 +541,7 @@ function ReposView({
             <>
               <div className="repo-head">
                 <div className="titles">
-                  <div className="page-title" style={{ fontSize: 18 }}>
+                  <div className="page-title" style={{ fontSize: 14 }}>
                     {repo.name}
                   </div>
                   <div className="faint mono">{repo.path}</div>
