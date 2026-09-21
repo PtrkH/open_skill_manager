@@ -1,0 +1,25 @@
+{
+  "name": "@osm/cli",
+  "version": "0.1.0",
+  "description": "Open Skill Manager CLI (osm)",
+  "type": "module",
+  "bin": {
+    "osm": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node ./scripts/chmod-bin.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "osm": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@osm/core": "*",
+    "commander": "^13.1.0",
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.13.10",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}

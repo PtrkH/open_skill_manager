@@ -1,0 +1,46 @@
+:root {
+  color-scheme: dark;
+  --bg: #0e1014;
+  --bg-elev: #161922;
+  --bg-row: #12151c;
+  --bg-row-hover: #1a1e28;
+  --border: #262b36;
+  --text: #e8eaef;
+  --muted: #8b93a7;
+  --accent: #8fa4ff;
+  --accent-dim: #3d4a7a;
+  --ok: #6bcf8e;
+  --warn: #d4a017;
+  --danger: #e57373;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+  --sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+a {
+  color: var(--accent);
+}

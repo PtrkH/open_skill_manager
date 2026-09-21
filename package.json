@@ -1,0 +1,23 @@
+{
+  "name": "open-skill-manager",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Local-first manager for Agent Skills across Claude Code, Codex, OpenCode, Pi, and Cursor",
+  "license": "MIT",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w @osm/core && npm run build -w @osm/cli && npm run build -w @osm/ui",
+    "test": "npm run test -w @osm/core",
+    "osm": "tsx packages/cli/src/index.ts",
+    "dev:ui": "npm run dev -w @osm/ui",
+    "typecheck": "npm run typecheck -w @osm/core && npm run typecheck -w @osm/cli"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.15"
+  }
+}

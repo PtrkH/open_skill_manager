@@ -218,37 +218,37 @@ Adapters expose: `detect()`, `listInstalled()`, `enable(skillPath)`, `disable(na
 
 ### M0 — Spec lock (this doc)
 - [x] Problem, non-goals, install/trust/UX decisions
-- [ ] Confirm final CLI name (`osm` vs `open-skill-manager`)
-- [ ] Confirm first verified source list (3–5 repos)
+- [x] Confirm final CLI name (`osm`)
+- [x] Confirm first verified source list (Anthropic, OpenAI, agentskills)
 
 ### M1 — Core + CLI
-- Parser + validate `SKILL.md`
-- Store (install version, set current)
-- Adapters for all five agents (global)
-- Commands: `scan`, `list`, `install`, `enable`, `disable`, `update`, `doctor`
-- Import orphan installs from disk
+- [x] Parser + validate `SKILL.md`
+- [x] Store (install version, set current)
+- [x] Adapters for all five agents (global)
+- [x] Commands: `scan`, `list`, `install`, `enable`, `disable`, `update`, `doctor`
+- [x] Import orphan installs from disk
 
 ### M2 — Repo scope
-- Register repos
-- Project-level enable/disable via adapters
-- `osm repo status` / align / clean
+- [x] Register repos
+- [x] Project-level enable/disable via adapters
+- [x] `osm repo status` / align / clean
 
 ### M3 — Local web UI (dark only)
-- Global skill list + per-agent matrix + repo coverage
-- Per-repo page with align/clean
-- Enable/disable: one agent, all agents, one repo, all registered repos
-- Conductor-like minimal dark chrome
+- [x] Global skill list + per-agent matrix + repo coverage
+- [x] Per-repo page with align/clean
+- [x] Enable/disable: one agent, all agents, one repo, all registered repos
+- [x] Conductor-like minimal dark chrome
 
 ### M4 — Discovery + trust
-- Bundled verified catalog (shallow clone or index JSON)
-- Unverified git install with warnings + script scan
-- Offline cache of previously fetched skills
+- [x] Bundled verified catalog (shallow clone or index JSON)
+- [x] Unverified git install with warnings + script scan
+- [x] Offline cache of previously fetched skills
 
 ### M5 — Polish / OSS
-- MIT license, CONTRIBUTING, adapter guide
-- `brew` tap or simple install script
-- `doctor` explains conflicts (same skill name, multiple roots)
-- Screenshot walkthrough in README
+- [x] MIT license, CONTRIBUTING, adapter guide
+- [ ] `brew` tap or simple install script
+- [x] `doctor` explains conflicts (same skill name, multiple roots)
+- [ ] Screenshot walkthrough in README
 
 ---
 
@@ -271,14 +271,13 @@ open_skill_manager/
 
 ---
 
-## Open questions (only if you care)
+## Open questions (resolved)
 
-1. CLI binary name: **`osm`** or longer?
-2. On “enable all”, should we always write **both** `.agents/skills` *and* agent-specific dirs, or prefer shared `.agents` when the agent supports it?
-3. First verified sources to ship: Anthropic + OpenAI + agentskills examples — add/remove any?
+1. CLI binary name: **`osm`**
+2. On “enable all”, write **both** `.agents/skills` *and* agent-specific dirs when the agent uses both
+3. First verified sources: Anthropic + OpenAI + agentskills examples
 
 **Locked:** dark mode only · local web UI + CLI · global + per-agent + per-repo all in v1.
-
 ---
 
 ## Build order when implementation starts

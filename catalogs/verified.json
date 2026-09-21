@@ -1,0 +1,66 @@
+{
+  "sources": [
+    {
+      "id": "anthropics-skills",
+      "name": "Anthropic Skills",
+      "repo": "https://github.com/anthropics/skills",
+      "trust": "verified",
+      "skillsPath": "skills",
+      "description": "Official Anthropic example and document skills"
+    },
+    {
+      "id": "openai-skills",
+      "name": "OpenAI Skills",
+      "repo": "https://github.com/openai/skills",
+      "trust": "verified",
+      "skillsPath": ".",
+      "description": "Official OpenAI / Codex skills catalog"
+    },
+    {
+      "id": "agentskills-examples",
+      "name": "Agent Skills Examples",
+      "repo": "https://github.com/agentskills/agentskills",
+      "trust": "verified",
+      "skillsPath": "skills",
+      "description": "Reference examples from the Agent Skills standard"
+    }
+  ],
+  "skills": [
+    {
+      "name": "docx",
+      "description": "Create, edit, and analyze Word documents",
+      "sourceId": "anthropics-skills",
+      "path": "skills/docx"
+    },
+    {
+      "name": "pdf",
+      "description": "Create, edit, and analyze PDF documents",
+      "sourceId": "anthropics-skills",
+      "path": "skills/pdf"
+    },
+    {
+      "name": "pptx",
+      "description": "Create, edit, and analyze PowerPoint presentations",
+      "sourceId": "anthropics-skills",
+      "path": "skills/pptx"
+    },
+    {
+      "name": "xlsx",
+      "description": "Create, edit, and analyze Excel spreadsheets",
+      "sourceId": "anthropics-skills",
+      "path": "skills/xlsx"
+    },
+    {
+      "name": "skill-creator",
+      "description": "Guide for creating effective Agent Skills",
+      "sourceId": "anthropics-skills",
+      "path": "skills/skill-creator"
+    },
+    {
+      "name": "gh-fix-issues",
+      "description": "Fix GitHub issues end-to-end with Codex",
+      "sourceId": "openai-skills",
+      "path": "skills/.system/skill-installer"
+    }
+  ]
+}
