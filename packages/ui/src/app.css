@@ -198,14 +198,18 @@
 }
 
 .page-title {
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 
 .page-meta {
   color: var(--faint);
   font-size: 12.5px;
+}
+
+.page-meta.crumb {
+  color: var(--muted);
 }
 
 .content {
@@ -304,81 +308,7 @@
   background: var(--danger-soft);
 }
 
-/* ——— Skill list ——— */
-
-.list {
-  border: 1px solid var(--border-soft);
-  border-radius: 8px;
-  overflow: hidden;
-  background: var(--bg-elev);
-}
-
-.list-head {
-  display: grid;
-  grid-template-columns: minmax(160px, 1.6fr) 80px 100px repeat(5, 40px) 52px;
-  gap: 6px;
-  align-items: center;
-  padding: 9px 14px;
-  color: var(--faint);
-  font-size: 10.5px;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  border-bottom: 1px solid var(--border-soft);
-}
-
-.agent-h {
-  text-align: center;
-  font-family: var(--mono);
-  font-size: 10px;
-}
-
-.row {
-  border-bottom: 1px solid var(--border-soft);
-}
-
-.row:last-child {
-  border-bottom: 0;
-}
-
-.row-main {
-  display: grid;
-  grid-template-columns: minmax(160px, 1.6fr) 80px 100px repeat(5, 40px) 52px;
-  gap: 6px;
-  align-items: center;
-  width: 100%;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  text-align: left;
-  padding: 11px 14px;
-  transition: background 0.12s ease;
-}
-
-.row-main:hover,
-.row.open .row-main {
-  background: var(--bg-hover);
-}
-
-.skill-name {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.skill-name strong {
-  font-weight: 600;
-  font-size: 13.5px;
-}
-
-.skill-name .hint {
-  color: var(--faint);
-  font-size: 12px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+/* ——— Shared text ——— */
 
 .mono {
   font-family: var(--mono);
@@ -637,35 +567,11 @@
 
 /* ——— Discover ——— */
 
-.hint-line {
-  margin: 0 0 12px;
-  color: var(--muted);
-  font-size: 12.5px;
-}
-
-.discover-row {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 16px;
-  align-items: center;
-  padding: 12px 14px;
-  border-bottom: 1px solid var(--border-soft);
-}
-
-.discover-row:last-child {
-  border-bottom: 0;
-}
-
-.discover-row .name-line {
+.source-strip {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 3px;
-}
-
-.discover-row .name-line strong {
-  font-weight: 600;
-  font-size: 13.5px;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
 }
 
 @keyframes fade-in {
@@ -784,12 +690,6 @@ button.skill-card:hover {
   font-weight: 600;
 }
 
-.chevron {
-  color: var(--faint);
-  font-size: 14px;
-  margin-top: 8px;
-}
-
 .skill-card-desc {
   margin: 0;
   color: var(--muted);
@@ -799,7 +699,6 @@ button.skill-card:hover {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  min-height: 3.9em;
 }
 
 .skill-card-meta {
@@ -813,33 +712,15 @@ button.skill-card:hover {
   border-top: 1px solid var(--border-soft);
 }
 
-.agent-chips {
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
-}
-
-.chip {
-  font-family: var(--mono);
-  font-size: 10px;
-  text-transform: uppercase;
-  padding: 2px 5px;
-  border-radius: 4px;
-  border: 1px solid var(--border);
-  color: var(--faint);
-}
-
-.chip.on {
-  color: var(--text);
-  border-color: #3f3f3f;
-  background: #1a1a1a;
-}
-
 .truncate {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 180px;
+}
+
+.empty-actions {
+  margin: 14px 0 0;
 }
 
 .detail-page {
@@ -973,24 +854,6 @@ button.skill-card:hover {
 
 .linkish:hover strong {
   text-decoration: underline;
-}
-
-.discover-intro {
-  margin: 0 0 14px;
-  color: var(--muted);
-  font-size: 13px;
-  max-width: 62ch;
-}
-
-.discover-intro strong {
-  color: var(--text);
-}
-
-.source-strip {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 14px;
 }
 
 .source-pill {

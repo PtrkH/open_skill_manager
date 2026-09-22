@@ -61,3 +61,8 @@ a {
   background: #333;
   color: #fff;
 }
+
+:focus-visible {
+  outline: 1px solid #fff;
+  outline-offset: 2px;
+}

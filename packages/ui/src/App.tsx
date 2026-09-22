@@ -101,6 +101,7 @@ function skillInitials(name: string) {
 
 export function App() {
   const [view, setView] = useState<View>({ kind: "tab", tab: "skills" });
+  const [returnTab, setReturnTab] = useState<Tab>("skills");
   const [snap, setSnap] = useState<Snapshot | null>(null);
   const [detail, setDetail] = useState<SkillDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -156,14 +157,15 @@ export function App() {
   };
 
   const agents = snap?.agents ?? [];
-  const tab = view.kind === "tab" ? view.tab : "skills";
-  const meta =
-    view.kind === "skill"
-      ? { title: view.name, blurb: "Skill detail" }
-      : TAB_META[view.tab];
+  const tab = view.kind === "tab" ? view.tab : returnTab;
+  const meta = view.kind === "tab" ? TAB_META[view.tab] : null;
 
-  const openSkill = (name: string) => setView({ kind: "skill", name });
+  const openSkill = (name: string, from: Tab = "skills") => {
+    setReturnTab(from);
+    setView({ kind: "skill", name });
+  };
   const goTab = (t: Tab) => setView({ kind: "tab", tab: t });
+  const goBack = () => goTab(returnTab);
 
   return (
     <div className="app">
@@ -220,13 +222,21 @@ export function App() {
 
       <div className="main-col">
         <header className="topbar">
-          {view.kind === "skill" && (
-            <button type="button" className="back-btn" onClick={() => goTab("skills")}>
-              ← Skills
-            </button>
+          {view.kind === "skill" ? (
+            <>
+              <button type="button" className="back-btn" onClick={goBack}>
+                ← {TAB_META[returnTab].title}
+              </button>
+              <div className="page-meta crumb">
+                {TAB_META[returnTab].title} / {view.name}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="page-title">{meta!.title}</div>
+              <div className="page-meta">{meta!.blurb}</div>
+            </>
           )}
-          <div className="page-title">{meta.title}</div>
-          <div className="page-meta">{meta.blurb}</div>
         </header>
 
         {error && <div className="banner">{error}</div>}
@@ -241,7 +251,7 @@ export function App() {
               repos={snap?.repos ?? []}
               busy={busy}
               run={run}
-              onUninstalled={() => goTab("skills")}
+              onUninstalled={() => goTab(returnTab)}
             />
           )}
 
@@ -253,7 +263,8 @@ export function App() {
               installSource={installSource}
               setInstallSource={setInstallSource}
               run={run}
-              onOpen={openSkill}
+              onOpen={(name) => openSkill(name, "skills")}
+              onDiscover={() => goTab("discover")}
             />
           )}
 
@@ -266,7 +277,7 @@ export function App() {
               setRepoPath={setRepoPath}
               busy={busy}
               run={run}
-              onOpen={openSkill}
+              onOpen={(name) => openSkill(name, "repos")}
             />
           )}
 
@@ -277,11 +288,9 @@ export function App() {
               setQuery={setDiscoverQ}
               sourceFilter={discoverSource}
               setSourceFilter={setDiscoverSource}
-              installSource={installSource}
-              setInstallSource={setInstallSource}
               busy={busy}
               run={run}
-              onInstalled={(name) => openSkill(name)}
+              onInstalled={(name) => openSkill(name, "discover")}
             />
           )}
         </div>
@@ -298,6 +307,7 @@ function SkillsView({
   setInstallSource,
   run,
   onOpen,
+  onDiscover,
 }: {
   snap: Snapshot;
   agents: Snapshot["agents"];
@@ -306,6 +316,7 @@ function SkillsView({
   setInstallSource: (s: string) => void;
   run: (fn: () => Promise<unknown>) => Promise<void>;
   onOpen: (name: string) => void;
+  onDiscover: () => void;
 }) {
   return (
     <section>
@@ -337,22 +348,27 @@ function SkillsView({
           className="btn ghost"
           type="button"
           disabled={busy}
+          title="Pull skills already on disk into the OSM store"
           onClick={() => void run(() => api("/api/scan/import", { method: "POST" }))}
         >
-          Import orphans
+          Import from disk
         </button>
       </div>
 
       {snap.skills.length === 0 && (
         <div className="empty">
           <strong>Nothing installed yet</strong>
-          Install a skill, import orphans, or browse Discover for verified ones.
+          <p className="empty-actions">
+            <button type="button" className="btn primary" onClick={onDiscover}>
+              Browse Discover
+            </button>
+          </p>
         </div>
       )}
 
       <div className="skill-grid">
         {snap.skills.map((skill) => {
-          const enabled = agents.filter((a) => skill.agents[a.id]);
+          const enabled = agents.filter((a) => skill.agents[a.id]).length;
           const repoCount = Object.values(skill.repos).filter(Boolean).length;
           return (
             <button
@@ -370,25 +386,13 @@ function SkillsView({
                   </div>
                   <div className="mono faint">{skill.version ?? "no version"}</div>
                 </div>
-                <span className="chevron">→</span>
               </div>
               <p className="skill-card-desc">
                 {skill.description || "No description in SKILL.md"}
               </p>
               <div className="skill-card-meta">
-                <div className="agent-chips">
-                  {agents.map((a) => (
-                    <span
-                      key={a.id}
-                      className={skill.agents[a.id] ? "chip on" : "chip"}
-                      title={a.label}
-                    >
-                      {a.id.slice(0, 3)}
-                    </span>
-                  ))}
-                </div>
                 <div className="faint">
-                  {enabled.length}/{agents.length} agents
+                  {enabled} agent{enabled === 1 ? "" : "s"}
                   {repoCount ? ` · ${repoCount} repo${repoCount === 1 ? "" : "s"}` : ""}
                 </div>
               </div>
@@ -808,8 +812,6 @@ function DiscoverView({
   setQuery,
   sourceFilter,
   setSourceFilter,
-  installSource,
-  setInstallSource,
   busy,
   run,
   onInstalled,
@@ -819,8 +821,6 @@ function DiscoverView({
   setQuery: (q: string) => void;
   sourceFilter: string;
   setSourceFilter: (id: string) => void;
-  installSource: string;
-  setInstallSource: (s: string) => void;
   busy: boolean;
   run: (fn: () => Promise<unknown>) => Promise<void>;
   onInstalled: (name: string) => void;
@@ -848,13 +848,6 @@ function DiscoverView({
 
   return (
     <section>
-      <div className="discover-intro">
-        <p>
-          Browse <strong>verified</strong> skills from allowlisted sources (Anthropic, OpenAI,
-          agentskills). Or paste any git URL below — those install as <em>unverified</em>.
-        </p>
-      </div>
-
       <div className="toolbar">
         <input
           className="input grow"
@@ -862,53 +855,22 @@ function DiscoverView({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-        <select
-          className="input"
-          value={sourceFilter}
-          onChange={(e) => setSourceFilter(e.target.value)}
-        >
-          <option value="all">All sources</option>
-          {snap.catalog.sources.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="toolbar">
-        <input
-          className="input grow"
-          placeholder="Or install any git URL / local path…"
-          value={installSource}
-          onChange={(e) => setInstallSource(e.target.value)}
-        />
-        <button
-          className="btn ghost"
-          type="button"
-          disabled={busy || !installSource.trim()}
-          onClick={() =>
-            void run(async () => {
-              const result = await api<{ name: string }>("/api/install", {
-                method: "POST",
-                body: JSON.stringify({ source: installSource.trim(), force: true }),
-              });
-              setInstallSource("");
-              onInstalled(result.name);
-            })
-          }
-        >
-          Install URL
-        </button>
       </div>
 
       <div className="source-strip">
+        <button
+          type="button"
+          className={sourceFilter === "all" ? "source-pill active" : "source-pill"}
+          onClick={() => setSourceFilter("all")}
+        >
+          All
+        </button>
         {snap.catalog.sources.map((s) => (
           <button
             key={s.id}
             type="button"
             className={sourceFilter === s.id ? "source-pill active" : "source-pill"}
-            onClick={() => setSourceFilter(sourceFilter === s.id ? "all" : s.id)}
+            onClick={() => setSourceFilter(s.id)}
           >
             {s.name}
           </button>
