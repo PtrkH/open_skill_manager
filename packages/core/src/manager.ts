@@ -65,36 +65,36 @@ export class OpenSkillManager {
 
   listStatuses(): SkillStatus[] {
     const state = this.state();
+    const locations = this.scan();
     const names = new Set<string>([
       ...Object.keys(state.skills),
-      ...this.scan().map((l) => l.name),
+      ...locations.map((l) => l.name),
     ]);
 
     const statuses: SkillStatus[] = [];
     for (const name of [...names].sort()) {
-      statuses.push(this.statusFor(name));
+      statuses.push(this.statusFor(name, locations));
     }
     return statuses;
   }
 
-  statusFor(name: string): SkillStatus {
+  statusFor(name: string, prefetchedScan?: ReturnType<OpenSkillManager["scan"]>): SkillStatus {
     const state = this.state();
     const record = state.skills[name];
-    const enablement = getEnablement(state, name);
     const version = getCurrentVersion(name, this.home);
     const inStore = Boolean(version);
+    // Disk is source of truth for whether an agent currently has the skill
     const agents = {} as Record<AgentId, boolean>;
     for (const agent of AGENTS) {
-      agents[agent] =
-        enablement.agents.includes(agent) || isEnabledForAgent(agent, name, { home: this.home });
+      agents[agent] = isEnabledForAgent(agent, name, { home: this.home });
     }
     const repos: Record<string, boolean> = {};
     for (const repo of state.repos) {
-      const onDisk = AGENTS.some((a) => isEnabledInRepo(repo.path, a, name));
-      repos[repo.id] = enablement.repos.includes(repo.id) || onDisk;
+      repos[repo.id] = AGENTS.some((a) => isEnabledInRepo(repo.path, a, name));
     }
 
-    const orphanLocations = this.scan().filter(
+    const locations = prefetchedScan ?? this.scan();
+    const orphanLocations = locations.filter(
       (l) => l.name === name && !inStore && !l.viaSymlink,
     );
 
@@ -183,7 +183,7 @@ export class OpenSkillManager {
     const scan = scanSkillDir(fetched.skillDir);
     const trust =
       opts.trust ??
-      trustForSource(fetched.source, state.trustedSources);
+      trustForSource(fetched.source, state.trustedSources, state.blockedSources);
 
     if (trust === "blocked") {
       throw new Error("Source is blocked");
@@ -231,17 +231,30 @@ export class OpenSkillManager {
     this.persist(state);
   }
 
-  enable(name: string, opts: { agents?: AgentId[]; repos?: string[]; allAgents?: boolean } = {}) {
+  enable(
+    name: string,
+    opts: {
+      agents?: AgentId[];
+      repos?: string[];
+      allAgents?: boolean;
+      /** Only link into repos — do not change global agent enables */
+      repoOnly?: boolean;
+    } = {},
+  ) {
     const state = this.state();
     const storePath = resolveCurrentSkillPath(name, this.home);
     if (!storePath) throw new Error(`Skill "${name}" is not in the store. Install or import first.`);
 
-    const agents = opts.allAgents ? [...AGENTS] : (opts.agents ?? [...AGENTS]);
     const en = getEnablement(state, name);
+    const agents = opts.allAgents
+      ? [...AGENTS]
+      : (opts.agents ?? (opts.repoOnly ? (en.agents.length ? [...en.agents] : [...AGENTS]) : [...AGENTS]));
 
-    for (const agent of agents) {
-      enableForAgent(agent, name, storePath, { home: this.home });
-      if (!en.agents.includes(agent)) en.agents.push(agent);
+    if (!opts.repoOnly) {
+      for (const agent of agents) {
+        enableForAgent(agent, name, storePath, { home: this.home });
+        if (!en.agents.includes(agent)) en.agents.push(agent);
+      }
     }
 
     const repoIds = opts.repos ?? [];
@@ -255,9 +268,7 @@ export class OpenSkillManager {
     }
 
     setEnablement(state, name, en);
-    if (state.skills[name]) {
-      /* keep */
-    } else {
+    if (!state.skills[name]) {
       const parsed = readSkillDir(storePath);
       upsertSkillRecord(state, {
         name,
@@ -302,8 +313,8 @@ export class OpenSkillManager {
     return en;
   }
 
-  enableInRepo(name: string, repoId: string, agents: AgentId[] = [...AGENTS]) {
-    return this.enable(name, { agents, repos: [repoId] });
+  enableInRepo(name: string, repoId: string, agents?: AgentId[]) {
+    return this.enable(name, { agents, repos: [repoId], repoOnly: true });
   }
 
   disableInRepo(name: string, repoId: string) {
@@ -403,7 +414,7 @@ export class OpenSkillManager {
     }
     if (!record.source) throw new Error(`No source recorded for "${name}"`);
     return this.install(record.source, {
-      forceUnverified: true,
+      forceUnverified: Boolean(opts.force),
       trust: record.trust,
     });
   }

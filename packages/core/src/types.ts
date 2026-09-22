@@ -69,6 +69,7 @@ export interface OsmState {
   skills: Record<string, SkillRecord>;
   enabled: Record<string, SkillEnablement>;
   trustedSources: string[];
+  blockedSources: string[];
 }
 
 export interface InstalledLocation {

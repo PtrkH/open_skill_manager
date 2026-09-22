@@ -4,7 +4,6 @@ import os from "node:os";
 import path from "node:path";
 import { cacheDir, ensureDir } from "./paths.js";
 import { readSkillDir } from "./parser.js";
-import { scanSkillDir } from "./trust.js";
 
 export interface FetchResult {
   skillDir: string;
@@ -48,11 +47,6 @@ export function fetchSkillSource(
 
   const skillDir = opts.subpath ? path.join(cache, opts.subpath) : findSkillRoot(cache);
   readSkillDir(skillDir);
-  const scan = scanSkillDir(skillDir);
-  if (!scan.ok) {
-    const dangers = scan.findings.filter((f) => f.kind === "danger").map((f) => f.message);
-    throw new Error(`Skill failed security scan:\n- ${dangers.join("\n- ")}`);
-  }
 
   return {
     skillDir,

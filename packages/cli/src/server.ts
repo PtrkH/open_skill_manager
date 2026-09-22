@@ -41,13 +41,14 @@ export async function startUiServer(opts: { port: number; openBrowser: boolean }
 
   app.post("/api/enable", (req, res) => {
     try {
-      const { name, agents, repos, allAgents } = req.body as {
+      const { name, agents, repos, allAgents, repoOnly } = req.body as {
         name: string;
         agents?: AgentId[];
         repos?: string[];
         allAgents?: boolean;
+        repoOnly?: boolean;
       };
-      const en = mgr.enable(name, { agents, repos, allAgents });
+      const en = mgr.enable(name, { agents, repos, allAgents, repoOnly });
       res.json(en);
     } catch (err) {
       res.status(400).json({ error: err instanceof Error ? err.message : String(err) });

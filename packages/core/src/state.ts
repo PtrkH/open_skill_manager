@@ -13,6 +13,7 @@ const EMPTY: OsmState = {
     "github.com/openai/skills",
     "github.com/agentskills/agentskills",
   ],
+  blockedSources: [],
 };
 
 export function defaultState(): OsmState {
@@ -30,6 +31,7 @@ export function loadState(home?: string): OsmState {
       skills: raw.skills ?? {},
       enabled: raw.enabled ?? {},
       trustedSources: raw.trustedSources ?? EMPTY.trustedSources,
+      blockedSources: raw.blockedSources ?? [],
     };
   } catch {
     return defaultState();

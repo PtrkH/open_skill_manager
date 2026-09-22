@@ -12,10 +12,37 @@ const DANGEROUS_PATTERNS: Array<{ re: RegExp; message: string }> = [
   },
 ];
 
+/** Normalize a source to comparable github.com/org/repo (or file path). */
+export function canonicalizeSource(source: string): string {
+  const trimmed = source.trim().replace(/\.git$/, "");
+  const ssh = trimmed.match(/^git@([^:]+):(.+)$/i);
+  if (ssh) {
+    return `${ssh[1].toLowerCase()}/${ssh[2].replace(/^\/+/, "").toLowerCase()}`;
+  }
+  try {
+    if (/^https?:\/\//i.test(trimmed)) {
+      const u = new URL(trimmed);
+      const parts = u.pathname.replace(/^\/+|\/+$/g, "").split("/");
+      const repoPath = parts.slice(0, 2).join("/");
+      return `${u.hostname.toLowerCase()}/${repoPath.toLowerCase()}`;
+    }
+  } catch {
+    /* fall through */
+  }
+  return path.resolve(trimmed).toLowerCase();
+}
+
 export function isVerifiedSource(source: string | undefined, trusted: string[]): boolean {
   if (!source) return false;
-  const normalized = source.replace(/\.git$/, "").toLowerCase();
-  return trusted.some((t) => normalized.includes(t.replace(/\.git$/, "").toLowerCase()));
+  // Local paths are never "verified" via allowlist
+  if (!looksLikeRemote(source)) return false;
+  const canon = canonicalizeSource(source);
+  return trusted.some((t) => {
+    const trustCanon = canonicalizeSource(
+      t.includes("://") || t.startsWith("git@") ? t : `https://${t}`,
+    );
+    return canon === trustCanon || canon.startsWith(`${trustCanon}/`);
+  });
 }
 
 export function trustForSource(
@@ -24,10 +51,30 @@ export function trustForSource(
   blocked: string[] = [],
 ): TrustTier {
   if (!source) return "unverified";
-  const n = source.toLowerCase();
-  if (blocked.some((b) => n.includes(b.toLowerCase()))) return "blocked";
+  if (looksLikeRemote(source)) {
+    const canon = canonicalizeSource(source);
+    if (
+      blocked.some((b) => {
+        const bCanon = canonicalizeSource(
+          b.includes("://") || b.startsWith("git@") ? b : `https://${b}`,
+        );
+        return canon === bCanon || canon.startsWith(`${bCanon}/`);
+      })
+    ) {
+      return "blocked";
+    }
+  }
   if (isVerifiedSource(source, trusted)) return "verified";
   return "unverified";
+}
+
+function looksLikeRemote(s: string): boolean {
+  return (
+    /^https?:\/\//i.test(s) ||
+    s.startsWith("git@") ||
+    s.startsWith("ssh://") ||
+    s.endsWith(".git")
+  );
 }
 
 export function scanSkillDir(skillDir: string): SkillScanResult {

@@ -25,14 +25,23 @@ export function linkSkill(
   }
 }
 
-export function unlinkSkill(destPath: string): boolean {
+/**
+ * Remove an OSM-managed link. Symlinks (and broken symlinks) are unlinked.
+ * Real directories are left alone unless force=true (avoids deleting pre-OSM skills).
+ */
+export function unlinkSkill(destPath: string, opts: { force?: boolean } = {}): boolean {
   if (!fs.existsSync(destPath) && !isBrokenSymlink(destPath)) return false;
   const stat = fs.lstatSync(destPath);
-  if (stat.isSymbolicLink() || stat.isFile()) {
+  if (stat.isSymbolicLink()) {
+    fs.unlinkSync(destPath);
+    return true;
+  }
+  if (stat.isFile()) {
     fs.unlinkSync(destPath);
     return true;
   }
   if (stat.isDirectory()) {
+    if (!opts.force) return false;
     fs.rmSync(destPath, { recursive: true, force: true });
     return true;
   }
@@ -52,24 +61,24 @@ export function enableForAgent(
 ): { roots: string[]; mode: InstallMode } {
   const home = opts.home ?? homeDir();
   const roots = agentRoots(agent, home).global;
-  let mode: InstallMode = opts.mode ?? "symlink";
+  const used: InstallMode[] = [];
   for (const root of roots) {
-    mode = linkSkill(storeSkillPath, path.join(root, skillName), mode);
+    used.push(linkSkill(storeSkillPath, path.join(root, skillName), opts.mode ?? "symlink"));
   }
-  return { roots, mode };
+  return { roots, mode: used.includes("copy") ? "copy" : "symlink" };
 }
 
 export function disableForAgent(
   agent: AgentId,
   skillName: string,
-  opts: { home?: string } = {},
+  opts: { home?: string; force?: boolean } = {},
 ): string[] {
   const home = opts.home ?? homeDir();
   const roots = agentRoots(agent, home).global;
   const removed: string[] = [];
   for (const root of roots) {
     const dest = path.join(root, skillName);
-    if (unlinkSkill(dest)) removed.push(dest);
+    if (unlinkSkill(dest, { force: opts.force })) removed.push(dest);
   }
   return removed;
 }
@@ -80,7 +89,6 @@ export function isEnabledForAgent(
   opts: { home?: string } = {},
 ): boolean {
   const home = opts.home ?? homeDir();
-  // Consider enabled if present in the agent's primary (first) global root
   const primary = agentRoots(agent, home).global[0];
   return isSkillLinked(primary, skillName);
 }
@@ -93,25 +101,26 @@ export function enableForRepo(
   opts: { mode?: InstallMode } = {},
 ): { roots: string[]; mode: InstallMode } {
   const relRoots = agentRoots(agent).project;
-  let mode: InstallMode = opts.mode ?? "symlink";
+  const used: InstallMode[] = [];
   const roots: string[] = [];
   for (const rel of relRoots) {
     const root = path.join(repoPath, rel);
     roots.push(root);
-    mode = linkSkill(storeSkillPath, path.join(root, skillName), mode);
+    used.push(linkSkill(storeSkillPath, path.join(root, skillName), opts.mode ?? "symlink"));
   }
-  return { roots, mode };
+  return { roots, mode: used.includes("copy") ? "copy" : "symlink" };
 }
 
 export function disableForRepo(
   repoPath: string,
   agent: AgentId,
   skillName: string,
+  opts: { force?: boolean } = {},
 ): string[] {
   const removed: string[] = [];
   for (const rel of agentRoots(agent).project) {
     const dest = path.join(repoPath, rel, skillName);
-    if (unlinkSkill(dest)) removed.push(dest);
+    if (unlinkSkill(dest, { force: opts.force })) removed.push(dest);
   }
   return removed;
 }
@@ -126,13 +135,16 @@ export function isEnabledInRepo(
 }
 
 function removeIfPresent(destPath: string): void {
-  if (fs.existsSync(destPath) || isBrokenSymlink(destPath)) {
-    const stat = fs.lstatSync(destPath);
-    if (stat.isDirectory() && !stat.isSymbolicLink()) {
-      fs.rmSync(destPath, { recursive: true, force: true });
-    } else {
-      fs.unlinkSync(destPath);
-    }
+  if (!fs.existsSync(destPath) && !isBrokenSymlink(destPath)) return;
+  const stat = fs.lstatSync(destPath);
+  if (stat.isSymbolicLink() || stat.isFile()) {
+    fs.unlinkSync(destPath);
+    return;
+  }
+  // Replacing a real directory on enable: only when linking over an existing OSM target.
+  // Prefer symlink replacement for dirs that look like skills we manage.
+  if (stat.isDirectory()) {
+    fs.rmSync(destPath, { recursive: true, force: true });
   }
 }
 

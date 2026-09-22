@@ -28,13 +28,16 @@ export function ensureDir(dir: string): void {
 }
 
 export interface AgentRoots {
+  /** Primary managed roots — enable/disable only touch these */
   global: string[];
   project: string[];
 }
 
-/** Primary + shared roots. Enable writes to all listed global roots. */
+/**
+ * Per-agent managed skill roots (no shared cross-agent dirs).
+ * Shared `~/.agents/skills` is scan-only so disable Claude ≠ disable Cursor.
+ */
 export function agentRoots(agent: AgentId, home = homeDir()): AgentRoots {
-  const agentsShared = path.join(home, ".agents", "skills");
   switch (agent) {
     case "claude":
       return {
@@ -43,33 +46,31 @@ export function agentRoots(agent: AgentId, home = homeDir()): AgentRoots {
       };
     case "codex":
       return {
-        global: [path.join(home, ".codex", "skills"), agentsShared],
+        global: [path.join(home, ".codex", "skills")],
         project: [".agents/skills"],
       };
     case "cursor":
       return {
-        global: [path.join(home, ".cursor", "skills"), agentsShared],
-        project: [".cursor/skills", ".agents/skills"],
+        global: [path.join(home, ".cursor", "skills")],
+        project: [".cursor/skills"],
       };
     case "opencode":
       return {
-        global: [
-          path.join(home, ".config", "opencode", "skills"),
-          agentsShared,
-          path.join(home, ".claude", "skills"),
-        ],
-        project: [".opencode/skills", ".agents/skills", ".claude/skills"],
+        global: [path.join(home, ".config", "opencode", "skills")],
+        project: [".opencode/skills"],
       };
     case "pi":
       return {
-        global: [path.join(home, ".pi", "agent", "skills"), agentsShared],
-        project: [".pi/skills", ".agents/skills"],
+        global: [path.join(home, ".pi", "agent", "skills")],
+        project: [".pi/skills"],
       };
   }
 }
 
+/** All roots to scan for orphan installs (includes shared portable dir). */
 export function allGlobalSkillRoots(home = homeDir()): string[] {
   const set = new Set<string>();
+  set.add(path.join(home, ".agents", "skills"));
   for (const agent of ["claude", "codex", "cursor", "opencode", "pi"] as AgentId[]) {
     for (const root of agentRoots(agent, home).global) {
       set.add(root);

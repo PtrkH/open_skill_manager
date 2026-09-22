@@ -504,7 +504,7 @@ function SkillDetailView({
               void run(() =>
                 api(`/api/skills/${encodeURIComponent(detail.name)}/update`, {
                   method: "POST",
-                  body: JSON.stringify({ force: true }),
+                  body: JSON.stringify({}),
                 }),
               )
             }
@@ -577,14 +577,14 @@ function SkillDetailView({
                       const on = e.target.checked;
                       void run(() =>
                         on
-                          ? api("/api/enable", {
-                              method: "POST",
-                              body: JSON.stringify({
-                                name: detail.name,
-                                repos: [r.id],
-                                allAgents: true,
-                              }),
-                            })
+? api("/api/enable", {
+                                      method: "POST",
+                                      body: JSON.stringify({
+                                        name: detail.name,
+                                        repos: [r.id],
+                                        repoOnly: true,
+                                      }),
+                                    })
                           : api("/api/disable", {
                               method: "POST",
                               body: JSON.stringify({
@@ -787,7 +787,7 @@ function ReposView({
                                 body: JSON.stringify({
                                   name: s.name,
                                   repos: [repo.id],
-                                  allAgents: true,
+                                  repoOnly: true,
                                 }),
                               }),
                         )
@@ -906,7 +906,6 @@ function DiscoverView({
                         body: JSON.stringify({
                           source: s.source!.repo,
                           subpath: s.path,
-                          force: true,
                         }),
                       });
                       onInstalled(result.name);
