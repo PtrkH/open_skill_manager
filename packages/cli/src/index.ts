@@ -124,16 +124,30 @@ program
   .command("enable")
   .description("Enable a skill for agents and/or repos")
   .argument("<name>")
-  .option("-a, --agents <list>", `Comma-separated agents (${AGENTS.join(",")}) — default: all`)
+  .option("-a, --agents <list>", `Comma-separated agents (${AGENTS.join(",")})`)
+  .option("--all", "Enable for all supported agents")
   .option("-r, --repo <id>", "Also enable in a registered repo (repeatable)", collect, [])
-  .action((name: string, opts: { agents?: string; repo: string[] }) => {
+  .action((name: string, opts: { agents?: string; all?: boolean; repo: string[] }) => {
     const agents = parseAgents(opts.agents);
+    if (!opts.all && !agents?.length && !opts.repo.length) {
+      console.error(
+        `Specify agents with -a/--agents (${AGENTS.join(",")}), --all, and/or -r/--repo.`,
+      );
+      process.exitCode = 1;
+      return;
+    }
     mgr().enable(name, {
       agents,
-      allAgents: !opts.agents,
+      allAgents: Boolean(opts.all),
       repos: opts.repo,
+      repoOnly: Boolean(opts.repo.length && !opts.all && !agents?.length),
     });
-    console.log(`Enabled ${name}` + (opts.agents ? ` for ${opts.agents}` : " for all agents"));
+    const who = opts.all
+      ? "all agents"
+      : agents?.length
+        ? agents.join(",")
+        : "repo only";
+    console.log(`Enabled ${name} (${who})`);
     if (opts.repo.length) console.log(`Repos: ${opts.repo.join(", ")}`);
   });
 

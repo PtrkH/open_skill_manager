@@ -34,10 +34,12 @@ export interface AgentRoots {
 }
 
 /**
- * Per-agent managed skill roots (no shared cross-agent dirs).
- * Shared `~/.agents/skills` is scan-only so disable Claude ≠ disable Cursor.
+ * Per-agent managed skill roots.
+ * Codex writes the documented `~/.agents/skills` plus legacy `~/.codex/skills`.
+ * Other agents use their own primary dirs only (no cross-disable via shared roots).
  */
 export function agentRoots(agent: AgentId, home = homeDir()): AgentRoots {
+  const agentsShared = path.join(home, ".agents", "skills");
   switch (agent) {
     case "claude":
       return {
@@ -46,7 +48,8 @@ export function agentRoots(agent: AgentId, home = homeDir()): AgentRoots {
       };
     case "codex":
       return {
-        global: [path.join(home, ".codex", "skills")],
+        // Documented user root first; legacy ~/.codex/skills kept for BC
+        global: [agentsShared, path.join(home, ".codex", "skills")],
         project: [".agents/skills"],
       };
     case "cursor":

@@ -141,10 +141,11 @@ function removeIfPresent(destPath: string): void {
     fs.unlinkSync(destPath);
     return;
   }
-  // Replacing a real directory on enable: only when linking over an existing OSM target.
-  // Prefer symlink replacement for dirs that look like skills we manage.
   if (stat.isDirectory()) {
-    fs.rmSync(destPath, { recursive: true, force: true });
+    throw new Error(
+      `Refusing to overwrite real skill directory at ${destPath}. ` +
+        `Import it with "osm scan --import" or remove it manually first.`,
+    );
   }
 }
 

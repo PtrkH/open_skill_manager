@@ -103,6 +103,22 @@ describe("OpenSkillManager", () => {
     mgr.disable("demo-skill", { agents: ["codex"] });
     expect(fs.existsSync(path.join(home, ".claude", "skills", "demo-skill"))).toBe(true);
     expect(fs.existsSync(path.join(home, ".codex", "skills", "demo-skill"))).toBe(false);
+    expect(fs.existsSync(path.join(home, ".agents", "skills", "demo-skill"))).toBe(false);
+  });
+
+  it("enables codex into documented ~/.agents/skills", () => {
+    mgr.install(skillSrc);
+    mgr.enable("demo-skill", { agents: ["codex"] });
+    expect(fs.existsSync(path.join(home, ".agents", "skills", "demo-skill"))).toBe(true);
+    expect(fs.existsSync(path.join(home, ".codex", "skills", "demo-skill"))).toBe(true);
+  });
+
+  it("refuses to overwrite a real skill directory on enable", () => {
+    const realDir = path.join(home, ".claude", "skills", "demo-skill");
+    writeSkill(realDir, "demo-skill", "Pre-existing unmanaged skill copy.");
+    mgr.install(skillSrc);
+    expect(() => mgr.enable("demo-skill", { agents: ["claude"] })).toThrow(/Refusing to overwrite/);
+    expect(fs.existsSync(path.join(realDir, "SKILL.md"))).toBe(true);
   });
 
   it("does not delete real directories on disable", () => {

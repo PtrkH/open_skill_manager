@@ -21,8 +21,8 @@ npm run osm -- scan --import
 # Install a local skill (see examples/demo-hello)
 npm run osm -- install ./examples/demo-hello
 
-# Enable for all agents (Claude, Codex, Cursor, OpenCode, Pi)
-npm run osm -- enable demo-hello
+# Enable for Claude Code and Codex (be explicit — no silent --all)
+npm run osm -- enable demo-hello -a claude,codex
 
 # Coverage matrix
 npm run osm -- list
