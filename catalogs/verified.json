@@ -1,0 +1,78 @@
+{
+  "sources": [
+    {
+      "id": "anthropics-skills",
+      "name": "Anthropic Skills",
+      "repo": "https://github.com/anthropics/skills",
+      "trust": "verified",
+      "skillsPath": "skills",
+      "description": "Official Anthropic example and document skills"
+    },
+    {
+      "id": "openai-skills",
+      "name": "OpenAI Skills",
+      "repo": "https://github.com/openai/skills",
+      "trust": "verified",
+      "skillsPath": ".",
+      "description": "Official OpenAI / Codex skills catalog"
+    },
+    {
+      "id": "agentskills-examples",
+      "name": "Agent Skills Examples",
+      "repo": "https://github.com/agentskills/agentskills",
+      "trust": "verified",
+      "skillsPath": "skills",
+      "description": "Reference examples from the Agent Skills standard"
+    }
+  ],
+  "skills": [
+    {
+      "name": "docx",
+      "description": "Create, edit, and analyze Word documents (.docx)",
+      "sourceId": "anthropics-skills",
+      "path": "skills/docx"
+    },
+    {
+      "name": "pdf",
+      "description": "Create, edit, and analyze PDF documents",
+      "sourceId": "anthropics-skills",
+      "path": "skills/pdf"
+    },
+    {
+      "name": "pptx",
+      "description": "Create, edit, and analyze PowerPoint presentations",
+      "sourceId": "anthropics-skills",
+      "path": "skills/pptx"
+    },
+    {
+      "name": "xlsx",
+      "description": "Create, edit, and analyze Excel spreadsheets",
+      "sourceId": "anthropics-skills",
+      "path": "skills/xlsx"
+    },
+    {
+      "name": "skill-creator",
+      "description": "Guide for creating effective Agent Skills with good descriptions and structure",
+      "sourceId": "anthropics-skills",
+      "path": "skills/skill-creator"
+    },
+    {
+      "name": "webapp-testing",
+      "description": "Test local web apps with Playwright — UI flows, forms, and screenshots",
+      "sourceId": "anthropics-skills",
+      "path": "skills/webapp-testing"
+    },
+    {
+      "name": "mcp-builder",
+      "description": "Guide for creating MCP servers to integrate external APIs with Claude",
+      "sourceId": "anthropics-skills",
+      "path": "skills/mcp-builder"
+    },
+    {
+      "name": "frontend-design",
+      "description": "Create distinctive, production-grade frontend interfaces with strong design systems",
+      "sourceId": "anthropics-skills",
+      "path": "skills/frontend-design"
+    }
+  ]
+}
